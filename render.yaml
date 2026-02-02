@@ -1,11 +1,4 @@
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: nbne-booking-db-beta
-    env: docker
-    plan: starter
-    region: frankfurt
-    
   # Web Service
   - type: web
     name: nbne-booking-api-beta
