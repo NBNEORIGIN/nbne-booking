@@ -44,5 +44,5 @@ databases:
   - name: nbne-booking-db-beta
     databaseName: booking_db
     user: booking_user
-    plan: starter-plus
+    plan: standard
     region: frankfurt
