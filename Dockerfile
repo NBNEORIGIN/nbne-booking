@@ -14,8 +14,6 @@ COPY api/ ./api/
 COPY alembic.ini .
 COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
-COPY tests/ ./tests/
-COPY pytest.ini .
 
 ENV PYTHONPATH=/app
 ENV PORT=8000
