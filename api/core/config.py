@@ -8,10 +8,10 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0-alpha"
     API_V1_STR: str = "/api/v1"
     
-    POSTGRES_SERVER: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    POSTGRES_SERVER: Optional[str] = None
+    POSTGRES_USER: Optional[str] = None
+    POSTGRES_PASSWORD: Optional[str] = None
+    POSTGRES_DB: Optional[str] = None
     POSTGRES_PORT: str = "5432"
     
     DATABASE_URL: Optional[str] = None
@@ -20,7 +20,11 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], values: dict) -> str:
         if isinstance(v, str):
             return v
-        return f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}:{values.get('POSTGRES_PORT')}/{values.get('POSTGRES_DB')}"
+        # Build from individual components if DATABASE_URL not provided
+        if all([values.get('POSTGRES_USER'), values.get('POSTGRES_PASSWORD'), 
+                values.get('POSTGRES_SERVER'), values.get('POSTGRES_DB')]):
+            return f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}:{values.get('POSTGRES_PORT')}/{values.get('POSTGRES_DB')}"
+        raise ValueError("Either DATABASE_URL or all POSTGRES_* variables must be provided")
     
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
     
