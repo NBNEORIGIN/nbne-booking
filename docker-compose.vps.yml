@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  booking-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: booking-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATABASE_URL=${DATABASE_URL}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - FROM_NAME=${FROM_NAME}
+      - ENABLE_EMAIL_NOTIFICATIONS=${ENABLE_EMAIL_NOTIFICATIONS}
+      - ENABLE_SMS_NOTIFICATIONS=${ENABLE_SMS_NOTIFICATIONS}
+    networks:
+      - nbne-network
+    depends_on:
+      - nbne-postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  nbne-network:
+    external: true
+
+# Note: nbne-postgres container is external and managed separately
+# Ensure nbne-postgres is on the nbne-network before starting this service

@@ -1,0 +1,61 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Testing
+tests/
+pytest.ini
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.*
+*.env
+!.env.example
+
+# Local development
+docker-compose.yml
+docker-compose.*.yml
+admin-test.html
+
+# Logs
+*.log
+logs/
+
+# Backups
+*.sql
+*.dump
+backups/
+
+# Render specific (not needed for VPS)
+render.yaml
+.renderignore
+
+# Node (if any)
+node_modules/
+npm-debug.log
