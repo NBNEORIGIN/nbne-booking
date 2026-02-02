@@ -1,6 +1,6 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, validator
+from pydantic import AnyHttpUrl, validator, Field
 
 
 class Settings(BaseSettings):
@@ -26,17 +26,17 @@ class Settings(BaseSettings):
             return f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}:{values.get('POSTGRES_PORT')}/{values.get('POSTGRES_DB')}"
         raise ValueError("Either DATABASE_URL or all POSTGRES_* variables must be provided")
     
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: Union[str, List[AnyHttpUrl]] = Field(default="")
     
     @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: str | List[str]) -> List[str] | str:
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if v is None or v == "":
             return []
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        if isinstance(v, list):
             return v
-        raise ValueError(v)
+        return []
     
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        
+        @classmethod
+        def parse_env_var(cls, field_name: str, raw_val: str) -> any:
+            if field_name == 'BACKEND_CORS_ORIGINS':
+                return raw_val
+            return cls.json_loads(raw_val)
 
 
 settings = Settings()
