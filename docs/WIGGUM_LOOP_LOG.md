@@ -613,5 +613,72 @@ Items deferred beyond pilot launch:
 - Color contrast validation for accessibility
 
 ### Next Steps
-- Create `docs/decisions.md` entry for frontend tech stack
-- Begin LOOP 1: Branding Data Model (migration + defaults)
+- Create `docs/decisions.md` entry for frontend tech stack ✅
+- Begin LOOP 1: Branding Data Model (migration + defaults) ✅
+
+---
+
+## LOOP 1 — BRANDING DATA MODEL (Frontend)
+**Date:** February 2, 2026  
+**Goal:** Implement branding configuration storage in database
+
+### Acceptance Criteria
+- [x] Branding columns added to tenant model
+- [x] Alembic migration created (005_add_tenant_branding_fields.py)
+- [x] Default values provided for all branding fields
+- [x] Validation added for hex colors (regex pattern)
+- [x] Validation added for logo URLs
+- [x] Tenant schemas updated with branding fields
+- [x] `get_branding()` method added to Tenant model for resolved values with defaults
+
+### Implementation Details
+
+**Branding Fields Added:**
+- `client_display_name` (String, nullable) - Override for public name
+- `logo_url` (String, nullable) - Logo image URL (validated)
+- `primary_color` (String, default="#2196F3") - Main brand color
+- `secondary_color` (String, nullable) - Secondary color
+- `accent_color` (String, nullable) - CTA/accent color
+- `booking_page_title` (String, nullable) - Custom page title
+- `booking_page_intro` (Text, nullable) - Intro text
+- `location_text` (String, nullable) - Location display
+- `contact_email` (String, nullable) - Public contact
+- `contact_phone` (String, nullable) - Public phone
+- `business_address` (Text, nullable) - Full address
+- `social_links` (JSON, nullable) - Social media links
+
+**Validation:**
+- Hex colors: `^#[0-9A-Fa-f]{6}$` pattern (e.g., #2196F3)
+- Logo URL: Must start with http://, https://, or / (relative path)
+- Colors automatically uppercased for consistency
+
+**Default Resolution:**
+- `client_display_name` → falls back to `tenant.name`
+- `primary_color` → defaults to "#2196F3" (Material Blue)
+- `secondary_color` → defaults to "#1976D2" (Darker blue)
+- `accent_color` → defaults to "#4CAF50" (Green)
+- `booking_page_title` → defaults to "Book with {tenant.name}"
+- `booking_page_intro` → defaults to standard text
+- `contact_email` → falls back to `tenant.email`
+- `contact_phone` → falls back to `tenant.phone`
+
+### Migration
+**File:** `alembic/versions/005_add_tenant_branding_fields.py`
+- Adds 12 new columns to tenants table
+- `primary_color` has server default of '#2196F3'
+- All other branding fields nullable
+- Reversible migration (downgrade removes columns)
+
+### Status
+**PASS**
+
+### Decisions
+- Branding fields as columns (not JSON) for type safety
+- Hex color validation at Pydantic level (before DB)
+- `get_branding()` method returns dict with all defaults resolved
+- Logo URL validation allows relative paths for flexibility
+- Social links as JSON for extensibility
+
+### Next Steps
+- Apply migration on VPS: `docker exec booking-app alembic upgrade head`
+- Begin LOOP 2: Design System + Base Layout
