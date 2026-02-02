@@ -1,0 +1,29 @@
+{
+  "apps": [
+    {
+      "id": "nbne-booking",
+      "name": "NBNE Booking",
+      "description": "Managed booking system for NBNE client websites",
+      "status": "development",
+      "version": "0.1.0-alpha",
+      "repository": "TBD",
+      "deployment": {
+        "platform": "TBD",
+        "url": "TBD"
+      },
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "PostgreSQL",
+        "frontend": "FastAPI Templates / React (TBD)",
+        "deployment": "Render"
+      },
+      "pilot_clients": [],
+      "launch_date": null,
+      "wiggum_loop_status": {
+        "current_loop": 0,
+        "completed_loops": [],
+        "pilot_launch_gate_passed": false
+      }
+    }
+  ]
+}

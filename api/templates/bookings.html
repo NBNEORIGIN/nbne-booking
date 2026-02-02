@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Bookings - NBNE Booking Admin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Bookings</h2>
+        <a href="/admin/bookings/export" class="btn btn-success">Export CSV</a>
+    </div>
+
+    <div class="filters">
+        <form method="get" style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <input type="date" name="start_date" placeholder="Start Date" value="{{ filters.start_date or '' }}">
+            <input type="date" name="end_date" placeholder="End Date" value="{{ filters.end_date or '' }}">
+            <select name="status">
+                <option value="">All Statuses</option>
+                <option value="CONFIRMED" {% if filters.status == 'CONFIRMED' %}selected{% endif %}>Confirmed</option>
+                <option value="CANCELLED" {% if filters.status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                <option value="COMPLETED" {% if filters.status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                <option value="NO_SHOW" {% if filters.status == 'NO_SHOW' %}selected{% endif %}>No Show</option>
+            </select>
+            <select name="service_id">
+                <option value="">All Services</option>
+                {% for service in services %}
+                <option value="{{ service.id }}" {% if filters.service_id == service.id|string %}selected{% endif %}>{{ service.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn">Filter</button>
+            <a href="/admin/bookings" class="btn btn-secondary">Clear</a>
+        </form>
+    </div>
+
+    {% if bookings %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Customer</th>
+                <th>Service</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th>Contact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>
+                    <strong>{{ booking.start_time.strftime('%b %d, %Y') }}</strong><br>
+                    <small>{{ booking.start_time.strftime('%I:%M %p') }} - {{ booking.end_time.strftime('%I:%M %p') }}</small>
+                </td>
+                <td>
+                    <strong>{{ booking.customer_name }}</strong>
+                    {% if booking.notes %}
+                    <br><small style="color: #666;">{{ booking.notes }}</small>
+                    {% endif %}
+                </td>
+                <td>{{ booking.service.name }}</td>
+                <td>{{ booking.service.duration_minutes }} min</td>
+                <td>
+                    <span class="status-badge status-{{ booking.status.value.lower() }}">
+                        {{ booking.status.value }}
+                    </span>
+                </td>
+                <td>
+                    <small>
+                        {{ booking.customer_email }}<br>
+                        {% if booking.customer_phone %}{{ booking.customer_phone }}{% endif %}
+                    </small>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="margin-top: 20px; text-align: center; color: #666;">
+        Showing {{ bookings|length }} booking(s)
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <h3>No bookings found</h3>
+        <p>Try adjusting your filters or check back later.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

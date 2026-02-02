@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NBNE Booking Admin Access</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .tenant-card {
+            border: 2px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            background: #f5f5f5;
+        }
+        .tenant-card h3 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #1976D2;
+        }
+        .info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>NBNE Booking Admin Access</h1>
+    
+    <div class="info">
+        <strong>Note:</strong> The admin UI requires a tenant header. Use one of the methods below:
+    </div>
+
+    <h2>Available Tenants</h2>
+
+    <div class="tenant-card">
+        <h3>Acme Corporation</h3>
+        <p><strong>Slug:</strong> acme-corp</p>
+        <p><strong>Access via:</strong></p>
+        <ul>
+            <li>Install ModHeader extension and add header: <code>X-Tenant-Slug: acme-corp</code></li>
+            <li>Or use curl: <code>curl -H "X-Tenant-Slug: acme-corp" http://localhost:8000/admin/bookings</code></li>
+        </ul>
+        <a href="http://localhost:8000/api/v1/bookings/?tenant_slug=acme-corp" class="btn">View Bookings API</a>
+    </div>
+
+    <div class="tenant-card">
+        <h3>Beauty & Wellness Salon</h3>
+        <p><strong>Slug:</strong> beauty-salon</p>
+        <p><strong>Access via:</strong></p>
+        <ul>
+            <li>Install ModHeader extension and add header: <code>X-Tenant-Slug: beauty-salon</code></li>
+            <li>Or use curl: <code>curl -H "X-Tenant-Slug: beauty-salon" http://localhost:8000/admin/bookings</code></li>
+        </ul>
+        <a href="http://localhost:8000/api/v1/bookings/?tenant_slug=beauty-salon" class="btn">View Bookings API</a>
+    </div>
+
+    <div class="tenant-card">
+        <h3>Tech Consulting Group</h3>
+        <p><strong>Slug:</strong> tech-consulting</p>
+        <p><strong>Access via:</strong></p>
+        <ul>
+            <li>Install ModHeader extension and add header: <code>X-Tenant-Slug: tech-consulting</code></li>
+            <li>Or use curl: <code>curl -H "X-Tenant-Slug: tech-consulting" http://localhost:8000/admin/bookings</code></li>
+        </ul>
+        <a href="http://localhost:8000/api/v1/bookings/?tenant_slug=tech-consulting" class="btn">View Bookings API</a>
+    </div>
+
+    <h2>Quick Links</h2>
+    <a href="http://localhost:8000/docs" class="btn">API Documentation (Swagger)</a>
+    <a href="http://localhost:8000/health" class="btn">Health Check</a>
+    <a href="http://localhost:8000/api/v1/tenants/" class="btn">List All Tenants</a>
+
+    <h2>Alternative: Use API Directly</h2>
+    <p>You can also interact with the API using the Swagger UI at <a href="http://localhost:8000/docs">http://localhost:8000/docs</a></p>
+    <p>Add the <code>X-Tenant-Slug</code> header in the "Authorize" or "Try it out" sections.</p>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Availability - NBNE Booking Admin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Weekly Availability</h2>
+
+    {% if availability %}
+    <table>
+        <thead>
+            <tr>
+                <th>Day of Week</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for avail in availability %}
+            <tr>
+                <td>
+                    {% set days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                    <strong>{{ days[avail.day_of_week] }}</strong>
+                </td>
+                <td>{{ avail.start_time.strftime('%I:%M %p') }}</td>
+                <td>{{ avail.end_time.strftime('%I:%M %p') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No availability configured</h3>
+        <p>Set up your weekly availability via the API.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <h2>Blackout Periods</h2>
+
+    {% if blackouts %}
+    <table>
+        <thead>
+            <tr>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for blackout in blackouts %}
+            <tr>
+                <td>{{ blackout.start_date.strftime('%b %d, %Y') }}</td>
+                <td>{{ blackout.end_date.strftime('%b %d, %Y') }}</td>
+                <td>{{ blackout.reason or 'No reason provided' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No blackout periods</h3>
+        <p>Create blackout periods via the API when needed.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+# Render ignore file - exclude from deployment
+
+# Development files
+.env
+.env.local
+*.env.local
+
+# Testing
+tests/
+pytest.ini
+.pytest_cache/
+
+# Documentation (not needed in production)
+docs/
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Local development
+docker-compose.yml
+admin-test.html
+
+# Backups
+*.sql
+*.dump
+backups/

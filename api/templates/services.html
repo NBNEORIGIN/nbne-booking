@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Services - NBNE Booking Admin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Services</h2>
+
+    {% if services %}
+    <table>
+        <thead>
+            <tr>
+                <th>Service Name</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for service in services %}
+            <tr>
+                <td><strong>{{ service.name }}</strong></td>
+                <td>{{ service.duration_minutes }} minutes</td>
+                <td>
+                    {% if service.is_active %}
+                    <span class="status-badge status-confirmed">Active</span>
+                    {% else %}
+                    <span class="status-badge status-cancelled">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>{{ service.created_at.strftime('%b %d, %Y') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No services found</h3>
+        <p>Create services via the API to get started.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
