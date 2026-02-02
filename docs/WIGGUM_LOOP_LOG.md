@@ -514,3 +514,104 @@ docker-compose exec api pytest -v
 ## Post-MVP Considerations
 Items deferred beyond pilot launch:
 - TBD
+
+---
+
+# FRONTEND BRANDING LOOPS
+
+---
+
+## LOOP 0 — FOUNDATION & SCOPE (Frontend)
+**Date:** February 2, 2026  
+**Goal:** Audit backend, create scope docs, decide implementation path
+
+### Acceptance Criteria
+- [x] Backend tenant resolution audited
+- [x] Existing template infrastructure reviewed
+- [x] Implementation path decided (server-rendered templates)
+- [x] FRONTEND_BRANDING_SCOPE.md created
+- [x] WIGGUM_LOOP_LOG.md updated with frontend section
+- [ ] decisions.md updated with frontend tech stack rationale
+
+### Backend Audit Findings
+**Tenant Model:**
+- Table: `tenants`
+- Fields: `id`, `slug`, `subdomain`, `name`, `email`, `phone`, `is_active`, `settings` (JSON)
+- Indexes: `slug` (unique), `subdomain` (unique)
+
+**Tenant Resolution:**
+- Middleware: `TenantMiddleware` resolves tenant on every request
+- Priority: subdomain → X-Tenant-Slug header → path parameter
+- Context: Available via `request.state.tenant` and context var
+- Dependency: `require_tenant()` for routes requiring tenant
+
+**Existing Templates:**
+- Location: `api/templates/`
+- Base: `base.html` with header, nav, styling
+- Admin pages: `bookings.html`, `services.html`, `availability.html`
+- Template engine: Jinja2 (already configured)
+
+**API Endpoints:**
+- Tenants: `/api/v1/tenants/` (full CRUD)
+- Services: `/api/v1/services/` (tenant-scoped)
+- Availability: `/api/v1/availability/` (tenant-scoped)
+- Blackouts: `/api/v1/blackouts/` (tenant-scoped)
+- Slots: `/api/v1/slots/` (tenant-scoped)
+- Bookings: `/api/v1/bookings/` (tenant-scoped)
+
+### Implementation Decision
+**CHOSEN: Server-Rendered Templates (Jinja2) + Tailwind CSS**
+
+**Rationale:**
+1. Backend already uses FastAPI + Jinja2 templates for admin UI
+2. Tenant resolution middleware already implemented and working
+3. Simplest deployment - no separate frontend build/deploy
+4. No CORS complexity - same origin as API
+5. SEO-friendly server-rendered HTML
+6. Fastest development path
+7. Consistent with existing admin UI architecture
+
+**Rejected:**
+- Separate Next.js/React frontend (adds complexity, separate deployment, CORS)
+- Vue/Nuxt (same issues as React)
+- Static site generator (can't handle dynamic tenant branding)
+
+### Branding Data Strategy
+**DECISION: Add columns to tenant table (not JSON settings)**
+
+**Rationale:**
+- Branding is core functionality, not optional config
+- Type safety and validation important
+- Easier to query and validate
+- Better for future features (indexes, constraints)
+- Migration acceptable for production-ready feature
+
+**Fields to Add:**
+- `client_display_name` (String, nullable) - Override for public name
+- `logo_url` (String, nullable) - Logo image URL
+- `primary_color` (String, default="#2196F3") - Main brand color
+- `secondary_color` (String, nullable) - Secondary color
+- `accent_color` (String, nullable) - CTA/accent color
+- `booking_page_title` (String, nullable) - Custom page title
+- `booking_page_intro` (Text, nullable) - Intro text
+- `location_text` (String, nullable) - Location display
+- `contact_email` (String, nullable) - Public contact (override tenant.email)
+- `contact_phone` (String, nullable) - Public phone (override tenant.phone)
+- `business_address` (Text, nullable) - Full address
+- `social_links` (JSON, nullable) - Social media links
+
+### Status
+**PASS**
+
+### Decisions
+- Server-rendered templates with Jinja2 (existing infrastructure)
+- Tailwind CSS via CDN for MVP (build step later if needed)
+- Branding fields as columns in tenant table (not JSON)
+- Public routes: `/{tenant}/book/*` or subdomain-based
+- Admin branding page: `/admin/branding`
+- Default branding values for unconfigured tenants
+- Color contrast validation for accessibility
+
+### Next Steps
+- Create `docs/decisions.md` entry for frontend tech stack
+- Begin LOOP 1: Branding Data Model (migration + defaults)

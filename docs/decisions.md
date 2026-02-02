@@ -45,6 +45,56 @@ Each decision should include:
 
 ---
 
+### [Frontend Loop 0] Frontend Tech Stack for Public Booking UI
+**Date:** 2026-02-02  
+**Context:** Need to build a customizable, branded public booking frontend that supports multiple tenants without per-client code forks. Must integrate with existing FastAPI backend and tenant resolution system.
+
+**Decision:**
+- **Frontend Approach**: Server-rendered templates (Jinja2)
+- **CSS Framework**: Tailwind CSS (via CDN for MVP)
+- **JavaScript**: Vanilla JS for minimal interactivity
+- **Template Location**: `api/templates/public/` (separate from admin templates)
+- **Branding Storage**: New columns in `tenants` table (not JSON settings)
+- **Routing**: `/{tenant}/book/*` or subdomain-based (leveraging existing middleware)
+
+**Rationale:**
+1. **Consistency**: Backend already uses Jinja2 for admin UI - proven pattern
+2. **Simplicity**: No separate frontend build/deploy pipeline needed
+3. **Tenant Resolution**: Existing `TenantMiddleware` handles tenant context automatically
+4. **No CORS**: Same origin as API eliminates CORS complexity
+5. **SEO-Friendly**: Server-rendered HTML is search engine friendly
+6. **Fastest Development**: Leverage existing infrastructure and patterns
+7. **Type Safety**: Branding as DB columns provides validation and type safety
+8. **Deployment**: Single deployment artifact (no separate frontend server)
+
+**Rejected Alternatives:**
+- **Separate Next.js/React Frontend**: Adds complexity (separate deployment, CORS, build pipeline, state management), slower development
+- **Vue/Nuxt**: Same issues as React, less familiar to team
+- **Static Site Generator**: Cannot handle dynamic per-tenant branding without rebuild
+- **JSON Settings for Branding**: Less type-safe, harder to query/validate, not discoverable in schema
+
+**Consequences:**
+- **Pros**:
+  - Faster development (no frontend framework learning curve)
+  - Simpler deployment (one app, one container)
+  - Tenant branding immediately available via middleware
+  - No API versioning concerns for frontend
+  - Server-side rendering for better initial load
+- **Cons**:
+  - Less interactive UI (acceptable for booking flow)
+  - Tailwind via CDN means larger initial CSS load (can optimize later with build step)
+  - May need refactor if complex client-side interactions needed later
+  - Requires database migration for branding fields
+
+**Migration Path if Needed:**
+- If future requirements demand rich client-side interactions, can build separate SPA while keeping server-rendered templates as fallback
+- Branding data model will work for both approaches
+- API endpoints already support headless consumption
+
+**Status:** Accepted
+
+---
+
 ## Template for New Decisions
 
 ### [Loop X] Decision Title
