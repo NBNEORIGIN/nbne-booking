@@ -1,0 +1,134 @@
+{% extends "public/base.html" %}
+{% import "public/components.html" as components %}
+
+{% block title %}{{ branding.booking_page_title }} - Your Details{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Progress Steps -->
+    {{ components.progress_steps(current_step, steps) }}
+    
+    <!-- Page Header -->
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">Your Details</h2>
+        <p class="text-gray-600">Please provide your contact information</p>
+    </div>
+    
+    <!-- Booking Summary -->
+    <div class="bg-primary bg-opacity-10 border-l-4 border-primary rounded-lg p-6 mb-6">
+        <h3 class="font-semibold text-gray-800 mb-3">Booking Summary</h3>
+        <div class="space-y-2 text-sm text-gray-700">
+            {% if service %}
+            <p><strong>Service:</strong> {{ service.name }}</p>
+            <p><strong>Duration:</strong> {{ service.duration_minutes }} minutes</p>
+            {% if service.price %}
+            <p><strong>Price:</strong> £{{ "%.2f"|format(service.price) }}</p>
+            {% endif %}
+            {% endif %}
+            {% if booking_date %}
+            <p><strong>Date:</strong> {{ booking_date }}</p>
+            {% endif %}
+            {% if booking_time %}
+            <p><strong>Time:</strong> {{ booking_time }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Contact Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <form id="bookingForm" onsubmit="submitBooking(event)">
+            {{ components.input('customer_name', 'Full Name', placeholder='John Doe', required=true) }}
+            {{ components.input('customer_email', 'Email Address', type='email', placeholder='john@example.com', required=true) }}
+            {{ components.input('customer_phone', 'Phone Number', type='tel', placeholder='+44 20 1234 5678', required=true) }}
+            {{ components.textarea('notes', 'Additional Notes (Optional)', placeholder='Any special requirements or questions...', rows=3) }}
+            
+            <!-- Terms Acceptance -->
+            <div class="mb-6">
+                <label class="flex items-start">
+                    <input type="checkbox" required class="mt-1 mr-3 h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary">
+                    <span class="text-sm text-gray-700">
+                        I agree to the booking terms and understand that I may be contacted to confirm this appointment.
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden mb-4"></div>
+            
+            <!-- Submit Button -->
+            <div class="flex gap-4">
+                <button type="button" onclick="history.back()" 
+                        class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all">
+                    ← Back
+                </button>
+                <button type="submit" id="submitBtn"
+                        class="flex-1 btn-accent rounded-lg font-semibold px-6 py-3 hover:shadow-lg active:scale-95 transition-all">
+                    Confirm Booking →
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+async function submitBooking(event) {
+    event.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMessage = document.getElementById('errorMessage');
+    const form = document.getElementById('bookingForm');
+    
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Creating Booking...';
+    errorMessage.classList.add('hidden');
+    
+    try {
+        // Get form data
+        const formData = new FormData(form);
+        const params = new URLSearchParams(window.location.search);
+        
+        // Prepare booking data
+        const bookingData = {
+            service_id: parseInt(params.get('service_id')),
+            start_time: `${params.get('date')}T${params.get('time')}`,
+            customer_name: formData.get('customer_name'),
+            customer_email: formData.get('customer_email'),
+            customer_phone: formData.get('customer_phone'),
+            notes: formData.get('notes') || ''
+        };
+        
+        // Submit to API
+        const response = await fetch('/api/v1/bookings/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Tenant-Slug': '{{ tenant.slug }}'
+            },
+            body: JSON.stringify(bookingData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to create booking');
+        }
+        
+        const booking = await response.json();
+        
+        // Store booking ID and redirect to confirmation
+        sessionStorage.setItem('bookingId', booking.id);
+        window.location.href = `/public/book/confirmation?booking_id=${booking.id}`;
+        
+    } catch (error) {
+        console.error('Booking error:', error);
+        errorMessage.textContent = error.message;
+        errorMessage.className = 'rounded-lg p-4 mb-4 bg-red-50 border-l-4 border-red-500 text-red-800';
+        errorMessage.classList.remove('hidden');
+        
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm Booking →';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "public/base.html" %}
+{% import "public/components.html" as components %}
+
+{% block title %}{{ branding.booking_page_title }} - Select Time{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Progress Steps -->
+    {{ components.progress_steps(current_step, steps) }}
+    
+    <!-- Page Header -->
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">Choose Your Time</h2>
+        {% if service %}
+        <p class="text-gray-600">{{ service.name }} - {{ service.duration_minutes }} minutes</p>
+        {% endif %}
+    </div>
+    
+    <!-- Date Selector -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4">Select a Date</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {% for date in available_dates %}
+            <button 
+                class="px-4 py-3 rounded-lg border-2 font-medium transition-all duration-200
+                       {% if date.date == selected_date %}border-primary bg-primary text-white
+                       {% else %}border-gray-300 hover:border-primary{% endif %}"
+                onclick="selectDate('{{ date.date }}')">
+                <div class="text-sm">{{ date.day_name }}</div>
+                <div class="text-lg font-bold">{{ date.day }}</div>
+                <div class="text-xs">{{ date.month }}</div>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Time Slots -->
+    {% if slots %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4">Available Times</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {% for slot in slots %}
+            <button 
+                class="px-4 py-3 rounded-lg border-2 font-medium transition-all duration-200
+                       {% if slot.available %}border-gray-300 hover:border-primary hover:bg-primary hover:text-white
+                       {% else %}border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed{% endif %}"
+                {% if slot.available %}onclick="selectSlot('{{ slot.start_time }}')"
+                {% else %}disabled{% endif %}>
+                {{ slot.time_display }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% elif selected_date %}
+    <!-- No slots available for selected date -->
+    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Times Available</h3>
+        <p class="text-gray-500">Please select a different date or contact us to schedule.</p>
+    </div>
+    {% endif %}
+    
+    <!-- Navigation -->
+    <div class="flex justify-between mt-8">
+        <button onclick="history.back()" 
+                class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all">
+            ← Back
+        </button>
+    </div>
+</div>
+
+<script>
+function selectDate(date) {
+    const serviceId = new URLSearchParams(window.location.search).get('service_id');
+    window.location.href = `/public/book/slots?service_id=${serviceId}&date=${date}`;
+}
+
+function selectSlot(startTime) {
+    const serviceId = new URLSearchParams(window.location.search).get('service_id');
+    const date = new URLSearchParams(window.location.search).get('date');
+    
+    // Store booking details
+    sessionStorage.setItem('selectedServiceId', serviceId);
+    sessionStorage.setItem('selectedDate', date);
+    sessionStorage.setItem('selectedTime', startTime);
+    
+    // Navigate to step 3
+    window.location.href = `/public/book/details?service_id=${serviceId}&date=${date}&time=${startTime}`;
+}
+</script>
+{% endblock %}
