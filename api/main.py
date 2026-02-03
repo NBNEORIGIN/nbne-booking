@@ -10,6 +10,8 @@ from api.api.admin.routes import router as admin_router
 from api.api.public.routes import router as public_router
 from api.middleware.tenant import TenantMiddleware
 from api.middleware.rate_limit import RateLimitMiddleware
+from api.middleware.security_headers import SecurityHeadersMiddleware
+from api.core.csrf import CSRFMiddleware
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,6 +42,8 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(CSRFMiddleware)
 app.add_middleware(TenantMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
