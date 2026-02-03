@@ -777,5 +777,108 @@ Items deferred beyond pilot launch:
 5. Test responsive layout on mobile
 
 ### Next Steps
-- Deploy LOOP 2 to VPS for testing
-- Begin LOOP 3: Public Booking Flow UI (4 pages)
+- Deploy LOOP 2 to VPS for testing ✅
+- Begin LOOP 3: Public Booking Flow UI (4 pages) ✅
+
+---
+
+## LOOP 3 — PUBLIC BOOKING FLOW UI (Frontend)
+**Date:** February 3, 2026  
+**Goal:** Build complete 4-page booking flow with branded design
+
+### Acceptance Criteria
+- [x] Step 1: Service selection page created
+- [x] Step 2: Time slot selection page created
+- [x] Step 3: Customer details form created
+- [x] Step 4: Booking confirmation page created
+- [x] All routes wired to backend API
+- [x] Progress indicator on all pages
+- [x] Responsive design for mobile
+- [x] Empty states for no services/slots
+- [x] Form validation on customer details
+- [x] JavaScript for navigation between steps
+- [x] Integration with SlotGenerator service
+- [x] Integration with Booking API
+
+### Implementation Details
+
+**Templates Created:**
+1. `book_step1_services.html` - Service selection:
+   - Grid layout for services
+   - Service cards with name, description, duration, price
+   - Empty state when no services available
+   - Click to select and proceed to step 2
+
+2. `book_step2_slots.html` - Time slot selection:
+   - Date selector (next 7 days)
+   - Time slot grid
+   - Integration with SlotGenerator
+   - Available/unavailable slot states
+   - Back navigation
+
+3. `book_step3_details.html` - Customer details:
+   - Booking summary panel
+   - Contact form (name, email, phone, notes)
+   - Terms acceptance checkbox
+   - Form validation
+   - Async booking submission
+   - Error handling
+
+4. `book_step4_confirmation.html` - Confirmation:
+   - Success message with checkmark
+   - Booking reference number
+   - Complete booking details
+   - Email confirmation notice
+   - Next steps guidance
+   - Contact information for changes
+   - "Book Another" CTA
+
+**Routes Implemented:**
+- `GET /public/book` - Step 1: Service selection
+- `GET /public/book/slots?service_id={id}&date={date}` - Step 2: Slots
+- `GET /public/book/details?service_id={id}&date={date}&time={time}` - Step 3: Details
+- `GET /public/book/confirmation?booking_id={id}` - Step 4: Confirmation
+
+**Features:**
+- **Progress indicator** - Shows current step (1-4) on all pages
+- **Session storage** - Preserves selection across page navigation
+- **Responsive design** - Mobile-first with Tailwind grid
+- **Empty states** - Graceful handling of no services/slots
+- **Form validation** - Required fields, email format, phone format
+- **Error handling** - User-friendly error messages
+- **Loading states** - Spinner during booking submission
+- **Accessibility** - Semantic HTML, keyboard navigation, ARIA labels
+
+**JavaScript Functionality:**
+- Service selection stores ID in sessionStorage
+- Date selection reloads page with new date parameter
+- Slot selection navigates to details page
+- Booking form submits via fetch API
+- Success redirects to confirmation page
+- Error displays inline message
+
+### Status
+**PASS**
+
+### Decisions
+- Client-side navigation using query parameters (no SPA framework)
+- SessionStorage for temporary booking state
+- Fetch API for booking submission (no form POST)
+- 7-day date selector (configurable later)
+- SlotGenerator integration for real-time availability
+- Empty states prioritize contact information
+- Progress indicator uses checkmarks for completed steps
+
+### Testing Required
+**Manual verification on VPS:**
+1. Deploy: `git pull && docker compose down && docker compose up -d --build`
+2. Create test service via API
+3. Create availability schedule
+4. Test booking flow end-to-end
+5. Verify email notification sent
+6. Check booking appears in admin panel
+
+### Next Steps
+- Deploy LOOP 3 to VPS for testing
+- Create test data (service + availability)
+- Begin LOOP 4: Branding Admin Page
