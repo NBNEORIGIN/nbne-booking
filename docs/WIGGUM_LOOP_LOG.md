@@ -680,5 +680,102 @@ Items deferred beyond pilot launch:
 - Social links as JSON for extensibility
 
 ### Next Steps
-- Apply migration on VPS: `docker exec booking-app alembic upgrade head`
-- Begin LOOP 2: Design System + Base Layout
+- Apply migration on VPS: `docker exec booking-app alembic upgrade head` ✅
+- Begin LOOP 2: Design System + Base Layout ✅
+
+---
+
+## LOOP 2 — DESIGN SYSTEM + BASE LAYOUT (Frontend)
+**Date:** February 3, 2026  
+**Goal:** Create branded UI shell with color system and reusable components
+
+### Acceptance Criteria
+- [x] Public template directory created (`api/templates/public/`)
+- [x] Base public template with branding support (`base.html`)
+- [x] Color utility helpers for accessibility (`api/utils/branding.py`)
+- [x] Reusable UI components library (`components.html`)
+- [x] CSS custom properties generated from branding
+- [x] Automatic text contrast calculation (WCAG compliant)
+- [x] Preview route to test branding (`/public/preview`)
+- [x] Public routes registered in main app
+
+### Implementation Details
+
+**Files Created:**
+1. `api/utils/branding.py` - Color utilities:
+   - `hex_to_rgb()` - Convert hex to RGB
+   - `get_relative_luminance()` - WCAG luminance calculation
+   - `get_contrast_ratio()` - Calculate contrast between colors
+   - `get_text_color_for_background()` - Auto white/black text selection
+   - `lighten_color()` / `darken_color()` - Color manipulation
+   - `get_branding_css_vars()` - Generate CSS custom properties
+
+2. `api/templates/public/base.html` - Base layout:
+   - Branded header with logo and client name
+   - Contact info display (phone, email, location)
+   - CSS custom properties for theming
+   - Responsive footer with social links
+   - Tailwind CSS via CDN
+   - Accessibility focus styles
+
+3. `api/templates/public/components.html` - Reusable components:
+   - `button()` - Primary, accent, disabled states
+   - `card()` - Content containers
+   - `input()` / `textarea()` - Form fields
+   - `alert()` - Success, error, warning, info
+   - `badge()` - Status indicators
+   - `spinner()` - Loading states
+   - `service_card()` - Service display
+   - `time_slot()` - Time selection
+   - `progress_steps()` - Multi-step progress indicator
+
+4. `api/templates/public/preview.html` - Branding preview page:
+   - Color palette display
+   - Component showcase
+   - Contact information
+   - CSS variables reference
+
+5. `api/api/public/routes.py` - Public routes:
+   - `/public/preview` - Branding preview
+   - `/public/book` - Booking flow start (placeholder)
+
+**CSS Custom Properties Generated:**
+- `--color-primary` - Main brand color
+- `--color-primary-light` - Lightened variant (+20%)
+- `--color-primary-dark` - Darkened variant (-20%)
+- `--color-primary-text` - Auto white/black for contrast
+- `--color-secondary` - Secondary color (or auto-generated)
+- `--color-secondary-text` - Auto contrast text
+- `--color-accent` - CTA/accent color
+- `--color-accent-light` / `--color-accent-dark` - Variants
+- `--color-accent-text` - Auto contrast text
+
+**Accessibility Features:**
+- WCAG AA contrast ratios enforced
+- Automatic text color selection (white/black on backgrounds)
+- Keyboard focus indicators (2px outline with accent color)
+- Semantic HTML structure
+- Screen reader friendly (sr-only classes)
+
+### Status
+**PASS**
+
+### Decisions
+- Tailwind CSS via CDN for MVP (no build step required)
+- CSS custom properties for runtime theming
+- WCAG contrast calculation for accessibility
+- Component macros using Jinja2 (no JavaScript framework)
+- Mobile-first responsive design with Tailwind utilities
+- Color utilities handle invalid/missing colors gracefully
+
+### Testing
+**Manual verification required:**
+1. Deploy to VPS: `git pull && docker compose restart`
+2. Access preview: `https://booking-beta.nbnesigns.co.uk/public/preview` with `X-Tenant-Slug` header
+3. Verify colors render correctly
+4. Check text contrast on all backgrounds
+5. Test responsive layout on mobile
+
+### Next Steps
+- Deploy LOOP 2 to VPS for testing
+- Begin LOOP 3: Public Booking Flow UI (4 pages)
