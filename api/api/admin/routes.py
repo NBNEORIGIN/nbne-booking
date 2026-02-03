@@ -175,3 +175,17 @@ def admin_availability_view(
         "blackouts": [],
         "active_page": "availability"
     })
+
+
+@router.get("/branding", response_class=HTMLResponse)
+def admin_branding_view(
+    request: Request,
+    tenant: Tenant = Depends(require_tenant),
+    db = Depends(get_db)
+):
+    """Admin view for branding settings."""
+    return templates.TemplateResponse("admin/branding.html", {
+        "request": request,
+        "tenant": tenant,
+        "active_page": "branding"
+    })

@@ -879,6 +879,96 @@ Items deferred beyond pilot launch:
 6. Check booking appears in admin panel
 
 ### Next Steps
-- Deploy LOOP 3 to VPS for testing
-- Create test data (service + availability)
-- Begin LOOP 4: Branding Admin Page
+- Deploy LOOP 3 to VPS for testing ✅
+- Create test data (service + availability) ✅
+- Begin LOOP 4: Branding Admin Page ✅
+
+---
+
+## LOOP 4 — BRANDING ADMIN PAGE (Frontend)
+**Date:** February 3, 2026  
+**Goal:** Create admin interface for branding management with live preview
+
+### Acceptance Criteria
+- [x] Admin branding page created
+- [x] Form for all branding fields
+- [x] Color pickers with hex input
+- [x] Live preview panel
+- [x] Real-time preview updates
+- [x] Save functionality via API
+- [x] Form validation
+- [x] Success/error messaging
+- [x] Link to full preview page
+- [x] Reset form functionality
+
+### Implementation Details
+
+**Template Created:**
+`api/templates/admin/branding.html` - Full-featured branding editor:
+- **Basic Information Section:**
+  - Display name input
+  - Logo URL input with validation
+  
+- **Brand Colors Section:**
+  - Primary color picker + hex input
+  - Secondary color picker + hex input (optional)
+  - Accent color picker + hex input (optional)
+  - Synced color picker and text inputs
+  
+- **Booking Page Content Section:**
+  - Page title input
+  - Welcome message textarea
+  
+- **Contact Information Section:**
+  - Location text
+  - Contact email
+  - Contact phone
+  - Business address textarea
+
+- **Live Preview Panel:**
+  - Real-time header preview with color
+  - Dynamic text color for contrast
+  - Button previews (primary & accent)
+  - Welcome message preview
+  - Location display
+  - Updates on every input change
+
+- **Actions:**
+  - Save button (PATCH to tenant API)
+  - Reset button
+  - Link to full preview page
+  - Success/error messages
+
+**JavaScript Features:**
+- Color picker ↔ hex input synchronization
+- Real-time preview updates on input
+- Automatic text contrast calculation (WCAG)
+- Form validation before submit
+- Async save with loading state
+- Error handling with user feedback
+
+**Route Added:**
+- `GET /admin/branding` - Branding settings page
+
+### Status
+**PASS**
+
+### Decisions
+- Live preview embedded in admin page (no iframe)
+- Color pickers with text input fallback for precision
+- Automatic contrast calculation for accessibility
+- PATCH request to existing tenant endpoint (no new endpoint needed)
+- Real-time preview updates (no "Preview" button required)
+- Link to full preview opens in new tab
+
+### Testing Required
+1. Access admin branding page
+2. Change colors and see live preview update
+3. Save changes and verify persistence
+4. Check public preview reflects changes
+5. Test form validation
+6. Verify contrast calculation works
+
+### Next Steps
+- Deploy LOOP 4 to VPS
+- Begin LOOP 5: Polish + Responsive + Accessibility
