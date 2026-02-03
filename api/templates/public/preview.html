@@ -1,0 +1,123 @@
+{% extends "public/base.html" %}
+{% import "public/components.html" as components %}
+
+{% block title %}Branding Preview - {{ branding.client_display_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Branding Preview</h2>
+    <p class="text-gray-600 mb-8">This page shows how your branding will appear to customers.</p>
+    
+    <!-- Intro Section -->
+    {% if branding.booking_page_intro %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <p class="text-lg text-gray-700">{{ branding.booking_page_intro }}</p>
+    </div>
+    {% endif %}
+    
+    <!-- Color Palette -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-xl font-semibold mb-4">Color Palette</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <div class="h-24 rounded-lg mb-2 flex items-center justify-center text-white font-semibold" 
+                     style="background-color: var(--color-primary); color: var(--color-primary-text);">
+                    Primary Color
+                </div>
+                <p class="text-sm text-gray-600 text-center">{{ branding.primary_color }}</p>
+            </div>
+            <div>
+                <div class="h-24 rounded-lg mb-2 flex items-center justify-center text-white font-semibold" 
+                     style="background-color: var(--color-secondary); color: var(--color-secondary-text);">
+                    Secondary Color
+                </div>
+                <p class="text-sm text-gray-600 text-center">{{ branding.secondary_color or 'Auto' }}</p>
+            </div>
+            <div>
+                <div class="h-24 rounded-lg mb-2 flex items-center justify-center text-white font-semibold" 
+                     style="background-color: var(--color-accent); color: var(--color-accent-text);">
+                    Accent Color
+                </div>
+                <p class="text-sm text-gray-600 text-center">{{ branding.accent_color or 'Auto' }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Component Examples -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-xl font-semibold mb-4">UI Components</h3>
+        
+        <!-- Buttons -->
+        <div class="mb-6">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Buttons</h4>
+            <div class="flex flex-wrap gap-3">
+                {{ components.button('Primary Button', type='primary') }}
+                {{ components.button('Accent Button', type='accent') }}
+                {{ components.button('Disabled Button', disabled=true) }}
+            </div>
+        </div>
+        
+        <!-- Alerts -->
+        <div class="mb-6">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Alerts</h4>
+            {{ components.alert('This is a success message!', type='success') }}
+            {{ components.alert('This is an informational message.', type='info') }}
+            {{ components.alert('This is a warning message.', type='warning') }}
+            {{ components.alert('This is an error message.', type='error') }}
+        </div>
+        
+        <!-- Badges -->
+        <div class="mb-6">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Badges</h4>
+            <div class="flex flex-wrap gap-2">
+                {{ components.badge('Primary', color='primary') }}
+                {{ components.badge('Success', color='success') }}
+                {{ components.badge('Warning', color='warning') }}
+                {{ components.badge('Error', color='error') }}
+                {{ components.badge('Default', color='gray') }}
+            </div>
+        </div>
+        
+        <!-- Progress Steps -->
+        <div class="mb-6">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Booking Progress</h4>
+            {{ components.progress_steps(2, ['Choose Service', 'Select Time', 'Your Details', 'Confirm']) }}
+        </div>
+        
+        <!-- Form Example -->
+        <div class="mb-6">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Form Elements</h4>
+            {{ components.input('name', 'Full Name', placeholder='John Doe', required=true) }}
+            {{ components.input('email', 'Email Address', type='email', placeholder='john@example.com', required=true) }}
+            {{ components.textarea('notes', 'Additional Notes', placeholder='Any special requirements...') }}
+        </div>
+    </div>
+    
+    <!-- Contact Information -->
+    {% if branding.contact_email or branding.contact_phone %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-xl font-semibold mb-4">Contact Information</h3>
+        <div class="space-y-2 text-gray-700">
+            {% if branding.contact_email %}
+            <p><strong>Email:</strong> {{ branding.contact_email }}</p>
+            {% endif %}
+            {% if branding.contact_phone %}
+            <p><strong>Phone:</strong> {{ branding.contact_phone }}</p>
+            {% endif %}
+            {% if branding.business_address %}
+            <p><strong>Address:</strong> {{ branding.business_address }}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- CSS Variables Reference -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-semibold mb-4">CSS Variables (for developers)</h3>
+        <div class="bg-gray-50 rounded p-4 overflow-x-auto">
+            <pre class="text-xs text-gray-700">{% for var_name, var_value in css_vars.items() %}{{ var_name }}: {{ var_value }};
+{% endfor %}</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}

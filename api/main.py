@@ -7,6 +7,7 @@ from api.core.config import settings
 from api.core.database import engine, Base
 from api.api.v1.api import api_router
 from api.api.admin.routes import router as admin_router
+from api.api.public.routes import router as public_router
 from api.middleware.tenant import TenantMiddleware
 
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +43,7 @@ app.add_middleware(TenantMiddleware)
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/admin")
+app.include_router(public_router, prefix="/public")
 
 
 @app.get("/health")

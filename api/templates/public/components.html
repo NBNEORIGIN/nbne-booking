@@ -1,0 +1,183 @@
+<!-- Reusable UI Components for Public Booking Interface -->
+
+<!-- Button Component -->
+{% macro button(text, type='primary', size='md', full_width=false, disabled=false) %}
+<button 
+    class="btn-{{ type }} rounded-lg font-semibold transition-all duration-200 
+           {% if size == 'sm' %}px-4 py-2 text-sm{% elif size == 'lg' %}px-8 py-4 text-lg{% else %}px-6 py-3{% endif %}
+           {% if full_width %}w-full{% endif %}
+           {% if disabled %}opacity-50 cursor-not-allowed{% else %}hover:shadow-lg active:scale-95{% endif %}"
+    {% if disabled %}disabled{% endif %}>
+    {{ text }}
+</button>
+{% endmacro %}
+
+<!-- Card Component -->
+{% macro card(title='', padding='lg') %}
+<div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
+    {% if title %}
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-800">{{ title }}</h3>
+    </div>
+    {% endif %}
+    <div class="{% if padding == 'sm' %}p-4{% elif padding == 'lg' %}p-6{% else %}p-0{% endif %}">
+        {{ caller() }}
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Input Field Component -->
+{% macro input(name, label, type='text', placeholder='', required=false, value='') %}
+<div class="mb-4">
+    <label for="{{ name }}" class="block text-sm font-medium text-gray-700 mb-2">
+        {{ label }}
+        {% if required %}<span class="text-red-500">*</span>{% endif %}
+    </label>
+    <input 
+        type="{{ type }}"
+        id="{{ name }}"
+        name="{{ name }}"
+        value="{{ value }}"
+        {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+        {% if required %}required{% endif %}
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+</div>
+{% endmacro %}
+
+<!-- Textarea Component -->
+{% macro textarea(name, label, placeholder='', required=false, rows=4, value='') %}
+<div class="mb-4">
+    <label for="{{ name }}" class="block text-sm font-medium text-gray-700 mb-2">
+        {{ label }}
+        {% if required %}<span class="text-red-500">*</span>{% endif %}
+    </label>
+    <textarea 
+        id="{{ name }}"
+        name="{{ name }}"
+        rows="{{ rows }}"
+        {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+        {% if required %}required{% endif %}
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all">{{ value }}</textarea>
+</div>
+{% endmacro %}
+
+<!-- Alert Component -->
+{% macro alert(message, type='info') %}
+<div class="rounded-lg p-4 mb-4 
+            {% if type == 'success' %}bg-green-50 border-l-4 border-green-500 text-green-800
+            {% elif type == 'error' %}bg-red-50 border-l-4 border-red-500 text-red-800
+            {% elif type == 'warning' %}bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800
+            {% else %}bg-blue-50 border-l-4 border-blue-500 text-blue-800{% endif %}">
+    <div class="flex items-start">
+        <svg class="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            {% if type == 'success' %}
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            {% elif type == 'error' %}
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            {% elif type == 'warning' %}
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            {% else %}
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            {% endif %}
+        </svg>
+        <p>{{ message }}</p>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Badge Component -->
+{% macro badge(text, color='gray') %}
+<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+             {% if color == 'primary' %}bg-primary text-white
+             {% elif color == 'success' %}bg-green-100 text-green-800
+             {% elif color == 'error' %}bg-red-100 text-red-800
+             {% elif color == 'warning' %}bg-yellow-100 text-yellow-800
+             {% else %}bg-gray-100 text-gray-800{% endif %}">
+    {{ text }}
+</span>
+{% endmacro %}
+
+<!-- Loading Spinner Component -->
+{% macro spinner(size='md') %}
+<div class="inline-block animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]
+            {% if size == 'sm' %}h-4 w-4 border-2{% elif size == 'lg' %}h-12 w-12{% else %}h-8 w-8{% endif %}"
+     role="status">
+    <span class="sr-only">Loading...</span>
+</div>
+{% endmacro %}
+
+<!-- Service Card Component -->
+{% macro service_card(service, selectable=true) %}
+<div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-200 
+            {% if selectable %}cursor-pointer border-2 border-transparent hover:border-primary{% endif %}"
+     {% if selectable %}onclick="selectService({{ service.id }})"{% endif %}>
+    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ service.name }}</h3>
+    {% if service.description %}
+    <p class="text-gray-600 mb-4">{{ service.description }}</p>
+    {% endif %}
+    <div class="flex items-center justify-between text-sm">
+        <div class="flex items-center text-gray-500">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ service.duration_minutes }} min
+        </div>
+        {% if service.price %}
+        <div class="text-lg font-bold text-primary">
+            £{{ "%.2f"|format(service.price) }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Time Slot Button Component -->
+{% macro time_slot(time, available=true) %}
+<button 
+    class="px-4 py-3 rounded-lg border-2 font-medium transition-all duration-200
+           {% if available %}
+           border-gray-300 hover:border-primary hover:bg-primary hover:text-white
+           {% else %}
+           border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed
+           {% endif %}"
+    {% if not available %}disabled{% endif %}>
+    {{ time }}
+</button>
+{% endmacro %}
+
+<!-- Progress Steps Component -->
+{% macro progress_steps(current_step, steps) %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        {% for step in steps %}
+        <div class="flex-1 {% if not loop.last %}mr-2{% endif %}">
+            <div class="flex items-center">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 
+                            {% if loop.index < current_step %}bg-primary border-primary text-white
+                            {% elif loop.index == current_step %}border-primary text-primary bg-white
+                            {% else %}border-gray-300 text-gray-400 bg-white{% endif %}">
+                    {% if loop.index < current_step %}
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    {% else %}
+                    <span class="font-semibold">{{ loop.index }}</span>
+                    {% endif %}
+                </div>
+                {% if not loop.last %}
+                <div class="flex-1 h-0.5 mx-2 
+                            {% if loop.index < current_step %}bg-primary
+                            {% else %}bg-gray-300{% endif %}"></div>
+                {% endif %}
+            </div>
+            <div class="mt-2 text-xs text-center font-medium
+                        {% if loop.index == current_step %}text-primary
+                        {% elif loop.index < current_step %}text-gray-700
+                        {% else %}text-gray-400{% endif %}">
+                {{ step }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endmacro %}
