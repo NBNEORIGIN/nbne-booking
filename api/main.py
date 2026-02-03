@@ -12,9 +12,13 @@ from api.middleware.tenant import TenantMiddleware
 from api.middleware.rate_limit import RateLimitMiddleware
 from api.middleware.security_headers import SecurityHeadersMiddleware
 from api.core.csrf import CSRFMiddleware
+from api.core.log_sanitizer import setup_sanitized_logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Setup log sanitization to prevent sensitive data leakage
+setup_sanitized_logging(mask_emails=False)
 
 
 @asynccontextmanager
