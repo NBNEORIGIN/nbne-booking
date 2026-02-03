@@ -4,11 +4,13 @@ from sqlalchemy import and_, or_
 from datetime import datetime
 
 from api.core.database import get_db
-from api.core.tenant_context import require_tenant
+from api.core.permissions import require_tenant_access, verify_resource_ownership
+from api.core.auth import get_current_user
 from api.core.config import settings
 from api.models.booking import Booking, BookingStatus
 from api.models.service import Service
 from api.models.tenant import Tenant
+from api.models.user import User
 from api.schemas.booking import BookingCreate, BookingResponse, BookingUpdate, BookingListItem
 from api.services.slot_generator import SlotGenerator
 from api.services.email_service import email_service
@@ -25,10 +27,10 @@ def list_bookings(
     service_id: int = Query(None),
     start_date: datetime = Query(None),
     end_date: datetime = Query(None),
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
     db = Depends(get_db)
 ):
-    """List all bookings for the current tenant with optional filters."""
+    """List all bookings for the current tenant with optional filters (authenticated)."""
     query = db.query(Booking).filter(Booking.tenant_id == tenant.id)
     
     if status:
@@ -68,10 +70,11 @@ def list_bookings(
 @router.get("/{booking_id}", response_model=BookingResponse)
 def get_booking(
     booking_id: int,
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
+    current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    """Get a specific booking by ID (must belong to current tenant)."""
+    """Get a specific booking by ID (authenticated, must belong to current tenant)."""
     booking = db.query(Booking).filter(
         Booking.id == booking_id,
         Booking.tenant_id == tenant.id
@@ -82,6 +85,9 @@ def get_booking(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Booking not found"
         )
+    
+    # Verify resource ownership
+    verify_resource_ownership(booking.tenant_id, current_user, "booking")
     
     # Enrich with service name
     service = db.query(Service).filter(Service.id == booking.service_id).first()
@@ -107,7 +113,7 @@ def get_booking(
 @router.post("/", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
 def create_booking(
     booking_in: BookingCreate,
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
     db = Depends(get_db)
 ):
     """

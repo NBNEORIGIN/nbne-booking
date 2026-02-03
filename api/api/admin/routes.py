@@ -8,10 +8,11 @@ import csv
 import io
 
 from api.core.database import get_db
-from api.core.tenant_context import require_tenant
+from api.core.permissions import require_tenant_access, require_admin_access
 from api.models.booking import Booking, BookingStatus
 from api.models.service import Service
 from api.models.tenant import Tenant
+from api.models.user import User
 
 router = APIRouter()
 templates = Jinja2Templates(directory="api/templates")
@@ -24,7 +25,8 @@ def admin_bookings_view(
     end_date: Optional[date] = Query(None),
     status: Optional[BookingStatus] = Query(None),
     service_id: Optional[int] = Query(None),
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
+    current_user: User = Depends(require_admin_access),
     db = Depends(get_db)
 ):
     """Admin view for bookings with filters."""
@@ -72,7 +74,8 @@ def export_bookings_csv(
     end_date: Optional[date] = Query(None),
     status: Optional[BookingStatus] = Query(None),
     service_id: Optional[int] = Query(None),
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
+    current_user: User = Depends(require_admin_access),
     db = Depends(get_db)
 ):
     """Export bookings to CSV with same filters as view."""
@@ -143,7 +146,8 @@ def export_bookings_csv(
 @router.get("/services", response_class=HTMLResponse)
 def admin_services_view(
     request: Request,
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
+    current_user: User = Depends(require_admin_access),
     db = Depends(get_db)
 ):
     """Admin view for services."""
@@ -160,7 +164,8 @@ def admin_services_view(
 @router.get("/availability", response_class=HTMLResponse)
 def admin_availability_view(
     request: Request,
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
+    current_user: User = Depends(require_admin_access),
     db = Depends(get_db)
 ):
     """Admin view for availability."""
@@ -180,7 +185,8 @@ def admin_availability_view(
 @router.get("/branding", response_class=HTMLResponse)
 def admin_branding_view(
     request: Request,
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
+    current_user: User = Depends(require_admin_access),
     db = Depends(get_db)
 ):
     """Admin view for branding settings."""
