@@ -9,6 +9,7 @@ from api.api.v1.api import api_router
 from api.api.admin.routes import router as admin_router
 from api.api.public.routes import router as public_router
 from api.middleware.tenant import TenantMiddleware
+from api.middleware.rate_limit import RateLimitMiddleware
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 app.add_middleware(TenantMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/admin")
