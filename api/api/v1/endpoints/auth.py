@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 import logging
@@ -12,8 +12,10 @@ from api.core.security import (
     hash_reset_token
 )
 from api.core.auth import get_current_user, get_current_active_user
+from api.core.audit import AuditLogger
 from api.models.user import User
 from api.models.password_reset import PasswordResetToken
+from api.models.audit_log import AuditAction
 from api.schemas.user import (
     UserLogin,
     Token,
@@ -67,6 +69,7 @@ def register_user(
 @router.post("/login", response_model=Token)
 def login(
     login_data: UserLogin,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -77,6 +80,17 @@ def login(
     
     if not user:
         logger.warning(f"Login attempt for non-existent user: {login_data.email}")
+        
+        # Audit log failed login
+        AuditLogger.log_auth_event(
+            db=db,
+            action=AuditAction.LOGIN_FAILED,
+            email=login_data.email,
+            success="failure",
+            request=request,
+            error_message="User not found"
+        )
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -99,6 +113,17 @@ def login(
         db.commit()
         
         logger.warning(f"Failed login attempt for user: {user.email} (attempts: {user.failed_login_attempts})")
+        
+        # Audit log failed login
+        AuditLogger.log_auth_event(
+            db=db,
+            action=AuditAction.LOGIN_FAILED,
+            email=user.email,
+            success="failure",
+            request=request,
+            error_message="Incorrect password"
+        )
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -120,6 +145,16 @@ def login(
     )
     
     logger.info(f"Successful login: {user.email}")
+    
+    # Audit log successful login
+    AuditLogger.log(
+        db=db,
+        action=AuditAction.LOGIN,
+        user=user,
+        tenant_id=user.tenant_id,
+        description=f"User logged in: {user.email}",
+        request=request
+    )
     
     return {"access_token": access_token, "token_type": "bearer"}
 
