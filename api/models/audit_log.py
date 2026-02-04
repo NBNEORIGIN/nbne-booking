@@ -80,7 +80,7 @@ class AuditLog(Base):
     
     # Details
     description = Column(Text, nullable=True)  # Human-readable description
-    metadata = Column(JSON, nullable=True)  # Additional context (sanitized)
+    meta = Column(JSON, nullable=True)  # Additional context (sanitized)
     
     # Request context
     ip_address = Column(String(45), nullable=True)  # IPv4 or IPv6

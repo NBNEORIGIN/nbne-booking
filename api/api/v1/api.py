@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.api.v1.endpoints import tenants, services, availability, blackouts, slots, bookings, auth, audit, gdpr
+from api.api.v1.endpoints import tenants, services, availability, blackouts, slots, bookings, auth, audit, gdpr, sessions, branding
 
 api_router = APIRouter()
 
@@ -12,3 +12,5 @@ api_router.include_router(availability.router, prefix="/availability", tags=["av
 api_router.include_router(blackouts.router, prefix="/blackouts", tags=["blackouts"])
 api_router.include_router(slots.router, prefix="/slots", tags=["slots"])
 api_router.include_router(bookings.router, prefix="/bookings", tags=["bookings"])
+api_router.include_router(sessions.router, prefix="/sessions", tags=["sessions"])
+api_router.include_router(branding.router, prefix="/branding", tags=["branding"])

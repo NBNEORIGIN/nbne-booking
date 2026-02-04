@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Group Classes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-color: #8D9889;
+            --secondary-color: #EEE8E5;
+            --text-color: #27382E;
+        }
+        
+        body {
+            font-family: 'RoxboroughCF', Georgia, serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+        
+        .session-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .session-card:hover:not(.sold-out) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .badge-available {
+            background-color: #D4E5D4;
+            color: #2D5F2E;
+        }
+        
+        .badge-low {
+            background-color: #FFF4E6;
+            color: #C87A00;
+        }
+        
+        .badge-sold-out {
+            background-color: #F5F5F5;
+            color: #666;
+        }
+        
+        .btn-book {
+            background-color: var(--primary-color);
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        
+        .btn-book:hover:not(:disabled) {
+            background-color: #7A8577;
+            transform: scale(1.02);
+        }
+        
+        .btn-book:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .group-header {
+            border-bottom: 2px solid var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div id="logo-container"></div>
+                <h1 id="header-title" class="text-4xl font-bold mb-2">Group Classes</h1>
+                <p id="header-intro" class="text-lg opacity-80">Select a session to book your place</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <!-- Loading State -->
+            <div id="loading" class="text-center py-16">
+                <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-current opacity-50"></div>
+                <p class="mt-4 text-lg opacity-70">Loading sessions...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-6">
+                <h3 class="font-semibold mb-2" style="color: #991B1B;">Unable to Load Sessions</h3>
+                <p id="error-message" style="color: #DC2626;"></p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center py-16">
+                <svg class="mx-auto h-24 w-24 opacity-30 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3 class="text-2xl font-semibold mb-3">No Upcoming Sessions</h3>
+                <p class="text-lg opacity-70 mb-6">Check back soon for new classes, or get in touch to learn more.</p>
+                <a id="contact-link" href="#" class="inline-block px-6 py-3 rounded-lg font-semibold" style="background-color: var(--primary-color); color: white;">
+                    Get in Touch
+                </a>
+            </div>
+
+            <!-- Sessions List -->
+            <div id="sessions-container" class="hidden space-y-12">
+                <!-- Session groups will be inserted here -->
+            </div>
+
+            <!-- Session Detail Modal -->
+            <div id="session-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-8">
+                        <div class="flex justify-between items-start mb-6">
+                            <h2 id="modal-title" class="text-3xl font-bold"></h2>
+                            <button id="modal-close" class="text-gray-400 hover:text-gray-600 text-2xl leading-none" aria-label="Close">
+                                &times;
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4 mb-8">
+                            <div class="flex items-center text-lg">
+                                <svg class="h-5 w-5 mr-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span id="modal-datetime"></span>
+                            </div>
+                            
+                            <div class="flex items-center text-lg">
+                                <svg class="h-5 w-5 mr-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span id="modal-duration"></span>
+                            </div>
+                            
+                            <div id="modal-location-container" class="flex items-center text-lg">
+                                <svg class="h-5 w-5 mr-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span id="modal-location"></span>
+                            </div>
+                            
+                            <div class="flex items-center text-lg">
+                                <svg class="h-5 w-5 mr-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span id="modal-capacity"></span>
+                            </div>
+                        </div>
+                        
+                        <div id="modal-description" class="text-lg leading-relaxed mb-8 opacity-80"></div>
+                        
+                        <div class="flex items-center justify-between pt-6 border-t">
+                            <div class="text-2xl font-bold" id="modal-price"></div>
+                            <button id="modal-book-btn" class="btn-book px-8 py-3 rounded-lg font-semibold text-white text-lg">
+                                Book This Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'https://booking.nbnesigns.co.uk/api/v1';
+        let currentBranding = null;
+        let selectedSession = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadBranding();
+            await loadSessions();
+        });
+
+        async function loadBranding() {
+            try {
+                const response = await fetch(`${API_URL}/branding/public`);
+                if (!response.ok) throw new Error('Failed to load branding');
+                
+                currentBranding = await response.json();
+                applyBranding(currentBranding);
+            } catch (error) {
+                console.error('Error loading branding:', error);
+            }
+        }
+
+        function applyBranding(branding) {
+            document.documentElement.style.setProperty('--primary-color', branding.primary_color);
+            if (branding.secondary_color) {
+                document.documentElement.style.setProperty('--secondary-color', branding.secondary_color);
+            }
+            
+            document.getElementById('page-title').textContent = branding.booking_page_title;
+            document.getElementById('header-title').textContent = branding.booking_page_title;
+            document.getElementById('header-intro').textContent = branding.booking_page_intro;
+            
+            if (branding.logo_url) {
+                document.getElementById('logo-container').innerHTML = 
+                    `<img src="${branding.logo_url}" alt="${branding.client_display_name}" class="h-12 mb-4">`;
+            }
+            
+            if (branding.contact_email) {
+                document.getElementById('contact-link').href = `mailto:${branding.contact_email}`;
+            }
+        }
+
+        async function loadSessions() {
+            try {
+                const response = await fetch(`${API_URL}/sessions/public/grouped`);
+                if (!response.ok) throw new Error('Failed to load sessions');
+                
+                const groups = await response.json();
+                
+                document.getElementById('loading').classList.add('hidden');
+                
+                if (groups.length === 0) {
+                    document.getElementById('empty-state').classList.remove('hidden');
+                } else {
+                    displaySessions(groups);
+                    document.getElementById('sessions-container').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+
+        function displaySessions(groups) {
+            const container = document.getElementById('sessions-container');
+            
+            container.innerHTML = groups.map(group => `
+                <section>
+                    <h2 class="text-2xl font-bold mb-6 pb-2 group-header">${group.group_label}</h2>
+                    <div class="space-y-4">
+                        ${group.sessions.map(session => createSessionCard(session)).join('')}
+                    </div>
+                </section>
+            `).join('');
+            
+            attachSessionListeners();
+        }
+
+        function createSessionCard(session) {
+            const startTime = new Date(session.start_time);
+            const dateStr = startTime.toLocaleDateString('en-GB', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            const timeStr = startTime.toLocaleTimeString('en-GB', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            const capacityBadge = getCapacityBadge(session);
+            const isSoldOut = session.is_sold_out;
+            
+            return `
+                <article class="session-card bg-white rounded-lg shadow-sm p-6 ${isSoldOut ? 'sold-out opacity-75' : 'cursor-pointer'}" 
+                         data-session='${JSON.stringify(session)}'
+                         ${!isSoldOut ? 'role="button" tabindex="0"' : ''}>
+                    <header class="mb-4">
+                        <time class="text-sm opacity-70 font-medium">${dateStr} • ${timeStr}</time>
+                        <h3 class="text-2xl font-bold mt-1">${session.service_name}</h3>
+                    </header>
+                    
+                    <div class="flex items-center gap-4 text-sm opacity-70 mb-4">
+                        ${session.location_text ? `<span>${session.location_text}</span>` : ''}
+                        <span>${session.duration_minutes} min</span>
+                    </div>
+                    
+                    <footer class="flex items-center justify-between pt-4 border-t">
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 rounded-full text-sm font-medium ${capacityBadge.class}">
+                                ${capacityBadge.text}
+                            </span>
+                            ${session.price ? `<span class="text-xl font-bold">£${session.price.toFixed(2)}</span>` : ''}
+                        </div>
+                        <button class="btn-book px-6 py-2 rounded-lg font-semibold text-white"
+                                ${isSoldOut ? 'disabled' : ''}
+                                aria-label="Book ${session.service_name} on ${dateStr} at ${timeStr}">
+                            ${isSoldOut ? 'Fully Booked' : 'Book Now'}
+                        </button>
+                    </footer>
+                </article>
+            `;
+        }
+
+        function getCapacityBadge(session) {
+            if (session.is_sold_out) {
+                return { text: 'Fully Booked', class: 'badge-sold-out' };
+            }
+            
+            if (session.spaces_left !== null) {
+                if (session.spaces_left <= 3) {
+                    return { text: `${session.spaces_left} space${session.spaces_left !== 1 ? 's' : ''} left`, class: 'badge-low' };
+                }
+            }
+            
+            return { text: 'Available', class: 'badge-available' };
+        }
+
+        function attachSessionListeners() {
+            document.querySelectorAll('.session-card:not(.sold-out)').forEach(card => {
+                card.addEventListener('click', () => {
+                    const session = JSON.parse(card.dataset.session);
+                    showSessionDetail(session);
+                });
+                
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const session = JSON.parse(card.dataset.session);
+                        showSessionDetail(session);
+                    }
+                });
+            });
+        }
+
+        function showSessionDetail(session) {
+            selectedSession = session;
+            
+            const startTime = new Date(session.start_time);
+            const dateStr = startTime.toLocaleDateString('en-GB', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+            const timeStr = startTime.toLocaleTimeString('en-GB', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            document.getElementById('modal-title').textContent = session.service_name;
+            document.getElementById('modal-datetime').textContent = `${dateStr} at ${timeStr}`;
+            document.getElementById('modal-duration').textContent = `${session.duration_minutes} minutes`;
+            
+            if (session.location_text) {
+                document.getElementById('modal-location').textContent = session.location_text;
+                document.getElementById('modal-location-container').classList.remove('hidden');
+            } else {
+                document.getElementById('modal-location-container').classList.add('hidden');
+            }
+            
+            const capacityBadge = getCapacityBadge(session);
+            document.getElementById('modal-capacity').textContent = capacityBadge.text;
+            
+            document.getElementById('modal-description').textContent = session.description || 'Join us for this session.';
+            
+            if (session.price) {
+                document.getElementById('modal-price').textContent = `£${session.price.toFixed(2)}`;
+            } else {
+                document.getElementById('modal-price').textContent = '';
+            }
+            
+            document.getElementById('session-modal').classList.remove('hidden');
+            document.getElementById('modal-book-btn').focus();
+        }
+
+        document.getElementById('modal-close').addEventListener('click', () => {
+            document.getElementById('session-modal').classList.add('hidden');
+        });
+
+        document.getElementById('session-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'session-modal') {
+                document.getElementById('session-modal').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('modal-book-btn').addEventListener('click', () => {
+            if (selectedSession) {
+                window.location.href = `booking.html?session_id=${selectedSession.id}`;
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('session-modal').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "email": "admin@nbnesigns.co.uk",
+  "password": "SecurePassword123!",
+  "full_name": "NBNE Admin",
+  "role": "superadmin",
+  "tenant_id": 1
+}

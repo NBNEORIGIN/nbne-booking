@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from api.core.database import get_db
 from api.core.auth import get_current_user
-from api.core.tenant_context import get_tenant_context
+from api.core.tenant_context import get_current_tenant
 from api.models.user import User, UserRole
 from api.models.tenant import Tenant
 
@@ -39,7 +39,7 @@ async def require_tenant_access(
     This combines authentication + tenant resolution + access check.
     Use this for all tenant-scoped endpoints.
     """
-    tenant_context = get_tenant_context()
+    tenant_context = get_current_tenant()
     
     if not tenant_context:
         raise HTTPException(

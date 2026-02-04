@@ -8,6 +8,7 @@ class ServiceBase(BaseModel):
     description: Optional[str] = Field(None, max_length=1000)
     duration_minutes: int = Field(..., gt=0, le=1440)
     price: Optional[float] = Field(None, ge=0)
+    max_capacity: Optional[int] = Field(None, gt=0, description="Maximum capacity for group classes")
     is_active: bool = True
 
 
@@ -20,6 +21,7 @@ class ServiceUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=1000)
     duration_minutes: Optional[int] = Field(None, gt=0, le=1440)
     price: Optional[float] = Field(None, ge=0)
+    max_capacity: Optional[int] = Field(None, gt=0, description="Maximum capacity for group classes")
     is_active: Optional[bool] = None
 
 

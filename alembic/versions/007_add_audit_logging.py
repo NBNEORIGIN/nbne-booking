@@ -30,7 +30,7 @@ def upgrade():
         sa.Column('resource_type', sa.String(length=50), nullable=True),
         sa.Column('resource_id', sa.Integer(), nullable=True),
         sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('metadata', sa.JSON(), nullable=True),
+        sa.Column('meta', sa.JSON(), nullable=True),
         sa.Column('ip_address', sa.String(length=45), nullable=True),
         sa.Column('user_agent', sa.String(length=500), nullable=True),
         sa.Column('request_path', sa.String(length=500), nullable=True),

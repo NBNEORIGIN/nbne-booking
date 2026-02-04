@@ -1,0 +1,29 @@
+booking.nbnesigns.co.uk {
+    # Automatic HTTPS via Let's Encrypt
+    
+    # Reverse proxy to API
+    reverse_proxy api:8000
+    
+    # Enable gzip compression
+    encode gzip
+    
+    # Security headers (additional to app's headers)
+    header {
+        # Remove server info
+        -Server
+        
+        # Additional security
+        X-Robots-Tag "noindex, nofollow"
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/booking.log
+        format json
+    }
+}
+
+# Redirect www to non-www
+www.booking.nbnesigns.co.uk {
+    redir https://booking.nbnesigns.co.uk{uri} permanent
+}

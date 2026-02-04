@@ -10,6 +10,19 @@ from api.schemas.service import ServiceCreate, ServiceResponse, ServiceUpdate
 router = APIRouter()
 
 
+@router.get("/public", response_model=List[ServiceResponse])
+def list_public_services(
+    skip: int = 0,
+    limit: int = 100,
+    db = Depends(get_db)
+):
+    """List all active services (public endpoint for booking form)."""
+    services = db.query(Service).filter(
+        Service.is_active == True
+    ).offset(skip).limit(limit).all()
+    return services
+
+
 @router.get("/", response_model=List[ServiceResponse])
 def list_services(
     request: Request,

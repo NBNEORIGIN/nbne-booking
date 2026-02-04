@@ -1,21 +1,27 @@
-# NBNE Booking API - Deployment Documentation
+# NBNE Booking Platform - Deployment Documentation
 
 ## 🎯 Current Status: FULLY DEPLOYED AND LIVE
 
-**Live API URL:** https://booking-beta.nbnesigns.co.uk  
-**API Documentation:** https://booking-beta.nbnesigns.co.uk/api/v1/docs  
-**Health Check:** https://booking-beta.nbnesigns.co.uk/health
+**Production URL:** https://booking.nbnesigns.co.uk  
+**Public Booking Form:** https://booking.nbnesigns.co.uk/  
+**Admin Dashboard:** https://booking.nbnesigns.co.uk/admin.html  
+**API Documentation:** https://booking.nbnesigns.co.uk/api/v1/docs  
+**Health Check:** https://booking.nbnesigns.co.uk/health
 
 ---
 
 ## 📋 Deployment Summary
 
-The NBNE Booking API has been successfully deployed to a VPS and is fully operational with:
+The NBNE Booking Platform has been successfully deployed to a VPS and is fully operational with:
+- ✅ Public booking form with email notifications
+- ✅ Admin dashboard with login and CSV export
+- ✅ Backend API with JWT authentication
 - ✅ Docker containerization
 - ✅ PostgreSQL database with migrations
 - ✅ HTTPS with automatic SSL certificates (Let's Encrypt via Caddy)
 - ✅ DNS configured
-- ✅ CORS enabled
+- ✅ CORS and CSRF protection
+- ✅ Email notifications via IONOS SMTP
 - ✅ Auto-restart on server reboot
 - ✅ Interactive API documentation (Swagger UI)
 
@@ -26,8 +32,9 @@ The NBNE Booking API has been successfully deployed to a VPS and is fully operat
 ### Server Details
 - **IP Address:** `87.106.65.142`
 - **OS:** Ubuntu 24.04
-- **Domain:** `booking-beta.nbnesigns.co.uk`
+- **Domain:** `booking.nbnesigns.co.uk`
 - **DNS Provider:** IONOS
+- **SSH Access:** `ssh toby@87.106.65.142`
 
 ### Installed Software
 - Docker & Docker Compose
@@ -39,20 +46,25 @@ The NBNE Booking API has been successfully deployed to a VPS and is fully operat
 ## 🐳 Docker Setup
 
 ### Containers
-1. **booking-app** - FastAPI application
+1. **booking-api** - FastAPI application
    - Port: 8000 (internal)
-   - Network: nbne-network
+   - Network: booking-network
    - Auto-restart: unless-stopped
 
-2. **nbne-postgres** - PostgreSQL 15 database
+2. **booking-db** - PostgreSQL 15 database
    - Port: 5432 (internal only)
-   - Network: nbne-network
-   - Volume: postgres-data
+   - Network: booking-network
+   - Volume: booking_db_data
 
-### Docker Network
-- **Name:** `nbne-network`
-- **Type:** Bridge
-- **External:** Yes (created manually)
+3. **booking-caddy** - Caddy reverse proxy
+   - Ports: 80, 443 (external)
+   - Networks: booking-network, caddy-network
+   - Serves frontend files from /srv/booking/frontend
+   - Proxies API requests to booking-api:8000
+
+### Docker Networks
+- **booking-network** - Backend communication
+- **caddy-network** - Frontend/proxy communication
 
 ---
 
@@ -60,18 +72,24 @@ The NBNE Booking API has been successfully deployed to a VPS and is fully operat
 
 ```
 /srv/booking/
-├── app/                          # Git repository clone
-│   ├── api/                      # FastAPI application code
-│   ├── alembic/                  # Database migrations
-│   ├── docker-compose.vps.yml    # VPS-specific compose file
-│   ├── Dockerfile                # Application container definition
-│   └── ...
-├── docker/
-│   └── docker-compose.yml        # Symlink to ../app/docker-compose.vps.yml
-└── .env                          # Environment variables (NOT in git)
-
-/etc/caddy/
-└── Caddyfile                     # Caddy reverse proxy configuration
+├── api/                          # FastAPI application code
+│   ├── api/v1/endpoints/         # API endpoints
+│   │   ├── bookings.py          # Booking endpoints (public + CSV export)
+│   │   ├── services.py          # Service endpoints (public)
+│   │   └── auth.py              # Authentication endpoints
+│   ├── core/                    # Core configuration
+│   │   ├── csrf.py              # CSRF protection
+│   │   └── config.py            # Settings
+│   ├── models/                  # SQLAlchemy models
+│   └── main.py                  # Application entry point
+├── alembic/                     # Database migrations
+├── frontend/                    # Frontend HTML files
+│   ├── index.html              # Public booking form
+│   └── admin.html              # Admin dashboard
+├── docker-compose.yml          # Docker Compose configuration
+├── Caddyfile                   # Caddy reverse proxy configuration
+├── Dockerfile                  # Application container definition
+└── .env                        # Environment variables (NOT in git)
 ```
 
 ---
@@ -79,39 +97,58 @@ The NBNE Booking API has been successfully deployed to a VPS and is fully operat
 ## 🔐 Credentials & Configuration
 
 ### Database
-- **Host:** `nbne-postgres` (Docker container name)
+- **Host:** `booking-db` (Docker container name)
 - **Port:** `5432`
 - **Database:** `nbne_main`
 - **User:** `nbne_admin`
-- **Password:** `Monkswood49` (changed from original `!49Monkswood` to avoid special char issues)
+- **Password:** (stored in .env file)
+
+### Admin Credentials
+- **Email:** `admin@nbnesigns.co.uk`
+- **Password:** `Admin123!`
+- **Role:** superadmin
+- **Tenant ID:** 1 (NBNE Signs)
 
 ### Environment Variables (`/srv/booking/.env`)
 ```bash
 # Database
-DATABASE_URL=postgresql://nbne_admin:Monkswood49@nbne-postgres:5432/nbne_main
+POSTGRES_SERVER=db
+POSTGRES_USER=nbne_admin
+POSTGRES_PASSWORD=<password>
+POSTGRES_DB=nbne_main
+POSTGRES_PORT=5432
 
-# CORS
-BACKEND_CORS_ORIGINS=https://booking-beta.nbnesigns.co.uk
+# Application
+SECRET_KEY=<secret_key>
+BACKEND_CORS_ORIGINS=https://booking.nbnesigns.co.uk
 
-# Email (Gmail)
-SMTP_HOST=smtp.gmail.com
+# Email (IONOS SMTP)
+SMTP_HOST=smtp.ionos.co.uk
 SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=tbjp nioa dwgr tsno
-FROM_EMAIL=your-email@gmail.com
-FROM_NAME=NBNE Booking
-ENABLE_EMAIL_NOTIFICATIONS=true
-ENABLE_SMS_NOTIFICATIONS=false
+SMTP_USER=sales@nbnesigns.co.uk
+SMTP_PASSWORD=!49Monkswood
+SMTP_FROM_EMAIL=sales@nbnesigns.co.uk
+SMTP_FROM_NAME=NBNE Booking
 ```
 
-### Caddy Configuration (`/etc/caddy/Caddyfile`)
-```
-booking-beta.nbnesigns.co.uk {
-    reverse_proxy localhost:8000
+**Note:** Email notifications are sent to `sales@nbnesigns.co.uk` when bookings are submitted.
+
+### Caddy Configuration (`/srv/booking/Caddyfile`)
+```caddyfile
+booking.nbnesigns.co.uk {
+    # Serve frontend files
+    root * /srv/booking/frontend
+    file_server
     
-    log {
-        output file /var/log/caddy/booking-beta.log
-        format json
+    # Proxy API requests to backend
+    reverse_proxy /api/* api:8000
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
     }
     
     encode gzip
@@ -123,14 +160,25 @@ booking-beta.nbnesigns.co.uk {
 ## 🗄️ Database Schema
 
 ### Tables Created (via Alembic migrations)
-1. **tenants** - Multi-tenant support
-2. **services** - Bookable services
-3. **availability** - Service availability schedules
-4. **blackouts** - Blocked time periods
-5. **bookings** - Customer bookings
+1. **tenants** - Multi-tenant support (ID 1 = NBNE Signs)
+2. **users** - Admin users with authentication
+3. **services** - Bookable services (4 active services)
+4. **availability** - Service availability schedules
+5. **blackouts** - Blocked time periods
+6. **bookings** - Customer bookings
+7. **audit_logs** - Audit trail for all actions
+
+### Current Data
+- **Tenant:** NBNE Signs (ID: 1)
+- **Admin User:** admin@nbnesigns.co.uk (superadmin)
+- **Services:** 4 active services configured
+  - Sign Installation (120 min, £250)
+  - Sign Maintenance (60 min, £75)
+  - Sign Repair (90 min, £150)
+  - Site Survey (45 min, £50)
 
 ### Migration Status
-All migrations up to date. Last migration: `004` (create bookings table)
+All migrations applied and up to date.
 
 ---
 
@@ -138,8 +186,8 @@ All migrations up to date. Last migration: `004` (create bookings table)
 
 ### Application Management
 ```bash
-# Navigate to docker directory
-cd /srv/booking/docker
+# Navigate to booking directory
+cd /srv/booking
 
 # Start application
 docker compose up -d
@@ -148,54 +196,79 @@ docker compose up -d
 docker compose down
 
 # View logs
-docker logs booking-app
-docker logs -f booking-app  # Follow logs
+docker compose logs api
+docker compose logs api -f  # Follow logs
 
-# Restart application
-docker compose restart
+# Restart API (useful for rate limit reset)
+docker compose restart api
 
-# Rebuild and restart
-docker compose down
-docker compose up -d --build
+# Rebuild API after code changes
+docker compose build api
+docker compose up -d api
+
+# Rebuild API without cache (force fresh build)
+docker compose build api --no-cache
+docker compose up -d api
 ```
 
-### Update Application from Git
+### Update Frontend Files
+```powershell
+# From Windows PowerShell
+scp "g:\My Drive\003 APPS\024 BOOKING\frontend\index.html" toby@87.106.65.142:/srv/booking/frontend/index.html
+scp "g:\My Drive\003 APPS\024 BOOKING\frontend\admin.html" toby@87.106.65.142:/srv/booking/frontend/admin.html
+
+# No restart needed - Caddy serves files directly
+```
+
+### Update Backend Code
+```powershell
+# From Windows PowerShell - upload specific file
+scp "g:\My Drive\003 APPS\024 BOOKING\api\api\v1\endpoints\bookings.py" toby@87.106.65.142:/srv/booking/api/api/v1/endpoints/bookings.py
+```
+
 ```bash
-cd /srv/booking/app
-git pull
-cd /srv/booking/docker
-docker compose down
-docker compose up -d --build
+# On server - rebuild and restart API
+cd /srv/booking
+docker compose build api
+docker compose up -d api
+
+# Verify API is running
+docker compose ps
+docker compose logs api --tail 20
 ```
 
 ### Database Operations
 ```bash
 # Run migrations
-docker exec booking-app alembic upgrade head
+docker compose exec api alembic upgrade head
 
 # Access PostgreSQL shell
-docker exec -it nbne-postgres psql -U nbne_admin -d nbne_main
+docker compose exec db psql -U nbne_admin -d nbne_main
+
+# View users
+docker compose exec db psql -U nbne_admin -d nbne_main -c "SELECT email, role FROM users;"
+
+# View bookings
+docker compose exec db psql -U nbne_admin -d nbne_main -c "SELECT id, customer_name, customer_email, service_id, start_time, status FROM bookings;"
 
 # Backup database
-docker exec nbne-postgres pg_dump -U nbne_admin nbne_main > backup.sql
+docker compose exec db pg_dump -U nbne_admin nbne_main > backup_$(date +%Y%m%d).sql
 
 # Restore database
-cat backup.sql | docker exec -i nbne-postgres psql -U nbne_admin -d nbne_main
+cat backup.sql | docker compose exec -i db psql -U nbne_admin -d nbne_main
 ```
 
 ### Caddy Management
 ```bash
-# Reload Caddy configuration
-sudo systemctl reload caddy
-
-# Check Caddy status
-sudo systemctl status caddy
+# Caddy runs in Docker container
+# Restart Caddy
+docker compose restart caddy
 
 # View Caddy logs
-sudo journalctl -u caddy -f
+docker compose logs caddy
 
-# Test Caddyfile syntax
-sudo caddy validate --config /etc/caddy/Caddyfile
+# Reload Caddyfile after changes
+docker compose restart caddy
 ```
 
 ### System Monitoring
@@ -220,40 +293,45 @@ sudo journalctl -xe
 
 ## 🚀 Deployment Process (For Future Updates)
 
-### 1. Make Changes Locally
-```bash
-# Make code changes
-# Test locally
-git add .
-git commit -m "Description of changes"
-git push origin main
+### 1. Update Frontend Files
+```powershell
+# From Windows PowerShell
+scp "g:\My Drive\003 APPS\024 BOOKING\frontend\index.html" toby@87.106.65.142:/srv/booking/frontend/index.html
+scp "g:\My Drive\003 APPS\024 BOOKING\frontend\admin.html" toby@87.106.65.142:/srv/booking/frontend/admin.html
+# Changes take effect immediately
 ```
 
-### 2. Deploy to VPS
+### 2. Update Backend Code
+```powershell
+# Upload changed file(s)
+scp "g:\My Drive\003 APPS\024 BOOKING\api\api\v1\endpoints\bookings.py" toby@87.106.65.142:/srv/booking/api/api/v1/endpoints/bookings.py
+```
+
 ```bash
 # SSH into VPS
 ssh toby@87.106.65.142
 
-# Pull latest changes
-cd /srv/booking/app
-git pull
+# Rebuild and restart API
+cd /srv/booking
+docker compose build api
+docker compose up -d api
 
-# Rebuild and restart
-cd /srv/booking/docker
-docker compose down
-docker compose up -d --build
-
-# Check logs
-docker logs booking-app
-
-# Test health endpoint
-curl https://booking-beta.nbnesigns.co.uk/health
+# Verify deployment
+docker compose ps
+docker compose logs api --tail 20
+curl https://booking.nbnesigns.co.uk/health
 ```
 
-### 3. Run Migrations (if needed)
+### 3. Run Migrations (if schema changed)
 ```bash
-docker exec booking-app alembic upgrade head
+cd /srv/booking
+docker compose exec api alembic upgrade head
 ```
+
+### 4. Test Deployment
+- Public form: https://booking.nbnesigns.co.uk/
+- Admin dashboard: https://booking.nbnesigns.co.uk/admin.html
+- API docs: https://booking.nbnesigns.co.uk/api/v1/docs
 
 ---
 
@@ -262,173 +340,224 @@ docker exec booking-app alembic upgrade head
 ### Container Won't Start
 ```bash
 # Check logs
-docker logs booking-app
+docker compose logs api --tail 50
 
-# Check if port is already in use
-sudo netstat -tulpn | grep 8000
+# Check all container status
+docker compose ps
 
 # Check environment variables
-docker exec booking-app env | grep -E "DATABASE|CORS"
+docker compose exec api printenv | grep -E "POSTGRES|SMTP|CORS"
 
 # Rebuild from scratch
+cd /srv/booking
 docker compose down
-docker compose up -d --build
+docker compose build --no-cache
+docker compose up -d
 ```
 
 ### Database Connection Issues
 ```bash
 # Test database connection
-docker exec booking-app psql -U nbne_admin -h nbne-postgres -d nbne_main
+docker compose exec api python -c "from api.core.database import engine; print(engine.connect())"
 
 # Check if postgres container is running
-docker ps | grep postgres
+docker compose ps db
 
-# Check network connectivity
-docker exec booking-app ping nbne-postgres
+# Check database logs
+docker compose logs db --tail 20
+
+# Access database directly
+docker compose exec db psql -U nbne_admin -d nbne_main
 ```
 
 ### HTTPS/SSL Issues
 ```bash
 # Check Caddy logs
-sudo journalctl -u caddy -f
+docker compose logs caddy --tail 50
 
 # Test DNS resolution
-nslookup booking-beta.nbnesigns.co.uk
+nslookup booking.nbnesigns.co.uk
 
-# Check if port 443 is open
-sudo netstat -tulpn | grep 443
+# Check if ports are exposed
+docker compose ps caddy
 
-# Reload Caddy
-sudo systemctl reload caddy
+# Restart Caddy
+docker compose restart caddy
+
+# Test HTTPS
+curl -I https://booking.nbnesigns.co.uk
 ```
 
-### CORS Issues
-The CORS configuration had issues with Pydantic trying to parse the string as JSON. This was fixed by:
-1. Updating the validator in `api/core/config.py` to handle string input properly
-2. Adding a custom `parse_env_var` method to prevent JSON parsing for BACKEND_CORS_ORIGINS
-
-If CORS issues occur, ensure the `.env` file has:
+### Rate Limiting Issues
+If login fails with "Too many requests" (429 error):
 ```bash
-BACKEND_CORS_ORIGINS=https://booking-beta.nbnesigns.co.uk
+# Restart API to reset rate limit counters
+cd /srv/booking
+docker compose restart api
 ```
-(No quotes, no brackets, just the plain URL)
+
+### Email Not Sending
+```bash
+# Check SMTP environment variables
+docker compose exec api printenv | grep SMTP
+
+# Check API logs for email errors
+docker compose logs api --tail 50 | grep -i email
+
+# Test SMTP connection manually
+docker compose exec api python3 -c "
+import smtplib, os
+with smtplib.SMTP(os.environ['SMTP_HOST'], int(os.environ['SMTP_PORT'])) as s:
+    s.starttls()
+    s.login(os.environ['SMTP_USER'], os.environ['SMTP_PASSWORD'])
+    print('SMTP connection successful')
+"
+```
+
+### Admin Login Issues
+- Verify credentials: admin@nbnesigns.co.uk / Admin123!
+- Check browser console for errors (F12)
+- Try hard refresh (Ctrl+Shift+R)
+- If rate limited, restart API: `docker compose restart api`
 
 ---
 
 ## 📊 API Endpoints
 
 ### Base URL
-`https://booking-beta.nbnesigns.co.uk/api/v1`
+`https://booking.nbnesigns.co.uk/api/v1`
 
-### Available Endpoints
-
-#### Tenants
-- `GET /api/v1/tenants/` - List all tenants
-- `POST /api/v1/tenants/` - Create tenant
-- `GET /api/v1/tenants/{tenant_id}` - Get tenant
-- `PATCH /api/v1/tenants/{tenant_id}` - Update tenant
-- `DELETE /api/v1/tenants/{tenant_id}` - Delete tenant
-- `GET /api/v1/tenants/slug/{slug}` - Get tenant by slug
+### Public Endpoints (No Authentication)
 
 #### Services
+- `GET /api/v1/services/public` - List active services for tenant
+
+#### Bookings
+- `POST /api/v1/bookings/public` - Create booking (public form)
+  - Automatically assigns to tenant ID 1 (NBNE Signs)
+  - Sends email notification to sales@nbnesigns.co.uk
+  - Returns booking confirmation
+
+### Protected Endpoints (Authentication Required)
+
+#### Authentication
+- `POST /api/v1/auth/login` - Login with email/password
+  - Returns JWT access token
+  - Token valid for 24 hours
+
+#### Bookings
+- `GET /api/v1/bookings/` - List all bookings (admin)
+- `GET /api/v1/bookings/export` - Export bookings to CSV
+- `GET /api/v1/bookings/{booking_id}` - Get booking details
+- `PATCH /api/v1/bookings/{booking_id}` - Update booking
+- `DELETE /api/v1/bookings/{booking_id}` - Cancel booking
+
+#### Services (Admin)
 - `GET /api/v1/services/` - List all services
 - `POST /api/v1/services/` - Create service
-- `GET /api/v1/services/{service_id}` - Get service
 - `PATCH /api/v1/services/{service_id}` - Update service
 - `DELETE /api/v1/services/{service_id}` - Delete service
 
-#### Availability
-- `GET /api/v1/availability/` - List availability schedules
-- `POST /api/v1/availability/` - Create availability
-- `GET /api/v1/availability/{availability_id}` - Get availability
-- `PATCH /api/v1/availability/{availability_id}` - Update availability
-- `DELETE /api/v1/availability/{availability_id}` - Delete availability
-
-#### Blackouts
-- `GET /api/v1/blackouts/` - List blackout periods
-- `POST /api/v1/blackouts/` - Create blackout
-- `GET /api/v1/blackouts/{blackout_id}` - Get blackout
-- `PATCH /api/v1/blackouts/{blackout_id}` - Update blackout
-- `DELETE /api/v1/blackouts/{blackout_id}` - Delete blackout
-
-#### Slots
-- `GET /api/v1/slots/` - Get available time slots
-
-#### Bookings
-- `GET /api/v1/bookings/` - List bookings
-- `POST /api/v1/bookings/` - Create booking
-- `GET /api/v1/bookings/{booking_id}` - Get booking
-- `PATCH /api/v1/bookings/{booking_id}` - Update booking
-- `DELETE /api/v1/bookings/{booking_id}` - Delete booking
+#### Other Endpoints
+- Tenants, Availability, Blackouts, Slots (see API docs)
 
 ### Testing Endpoints
-Visit https://booking-beta.nbnesigns.co.uk/api/v1/docs for interactive API documentation.
+Visit https://booking.nbnesigns.co.uk/api/v1/docs for interactive API documentation.
 
 ---
 
-## 🔄 Next Steps (Not Yet Implemented)
+## ✅ Completed Features
 
-### LOOP 5: Email Notifications
-- Configure SMTP settings (credentials already in .env)
-- Test email sending for booking confirmations
-- Set up email templates
+- ✅ Public booking form with service selection
+- ✅ Admin dashboard with JWT authentication
+- ✅ CSV export for bookings
+- ✅ Email notifications via IONOS SMTP
+- ✅ HTTPS with automatic SSL
+- ✅ CSRF protection with exempt paths
+- ✅ Rate limiting
+- ✅ Audit logging
+- ✅ Multi-tenant support (ready for expansion)
 
-### LOOP 6: Backups
-- Set up automated PostgreSQL backups
-- Configure backup retention policy
-- Test restore procedure
+## 🔄 Future Enhancements
 
-### LOOP 7: Monitoring & Logging
-- Set up uptime monitoring (e.g., UptimeRobot)
-- Configure log rotation
-- Add health check alerts
-- Set up error tracking (e.g., Sentry)
+### High Priority
+- [ ] Automated database backups
+- [ ] Uptime monitoring (UptimeRobot)
+- [ ] Customer email confirmations
+- [ ] Booking cancellation/rescheduling
+- [ ] Calendar view for available slots
 
-### LOOP 8: Documentation & Validation
-- Create API usage guide
-- Document authentication flow
-- Create troubleshooting runbook
-- Perform load testing
+### Medium Priority
+- [ ] SMS notifications
+- [ ] Payment integration
+- [ ] Admin booking creation
+- [ ] Blackout period management UI
+- [ ] Availability schedule management UI
 
-### Frontend Development
-- Choose framework (React/Next.js recommended)
-- Design UI/UX
-- Build booking interface
-- Implement authentication
-- Deploy frontend
+### Low Priority
+- [ ] Multi-language support
+- [ ] Dark mode
+- [ ] Mobile app
+- [ ] Customer portal
+- [ ] Analytics dashboard
 
 ---
 
 ## 📝 Important Notes
 
-### Password Change History
-- Original password: `!49Monkswood` (had issues with special character `!`)
-- Changed to: `Monkswood49` (simpler, no special chars)
-- This required updating both the Postgres container and the `.env` file
+### CSRF Protection
+- Public endpoints (`/services/public`, `/bookings/public`) are CSRF-exempt
+- Auth endpoints (`/auth/login`, `/auth/register`) are CSRF-exempt
+- All other POST/PUT/PATCH/DELETE requests require CSRF token
 
-### CORS Configuration
-- Initially had issues with Pydantic trying to parse CORS origins as JSON
-- Fixed by modifying `api/core/config.py` to handle string input properly
-- CORS must be uncommented in `.env` for the app to work with frontend
+### Email Configuration
+- Using IONOS SMTP (smtp.ionos.co.uk:587)
+- Emails sent from sales@nbnesigns.co.uk
+- Admin receives notification for each booking
+- SMTP credentials stored in .env file
 
-### Docker Compose File
-- Using `docker-compose.vps.yml` for production
-- Copied to `/srv/booking/docker/docker-compose.yml` on VPS
-- Uses `env_file` directive to load `.env` file
-- Connects to external `nbne-network` and `nbne-postgres` container
+### Rate Limiting
+- Protects against brute force attacks
+- Can cause login issues if too many attempts
+- Reset by restarting API container
+
+### Admin Password Reset
+```bash
+# Create password reset script
+cat > /tmp/reset_password.py << 'EOF'
+import sys
+sys.path.insert(0, '/app')
+from api.core.database import SessionLocal
+from api.models.user import User
+from api.core.security import get_password_hash
+
+db = SessionLocal()
+admin = db.query(User).filter(User.email == 'admin@nbnesigns.co.uk').first()
+if admin:
+    admin.hashed_password = get_password_hash('Admin123!')
+    db.commit()
+    print('Password reset successfully')
+db.close()
+EOF
+
+# Run script
+docker cp /tmp/reset_password.py booking-api:/tmp/
+docker compose exec api python3 /tmp/reset_password.py
+```
 
 ### SSL Certificates
 - Automatically obtained and renewed by Caddy
-- Stored in `/var/lib/caddy/`
+- Stored in Docker volume `caddy_data`
 - No manual intervention required
 
 ---
 
 ## 🔗 Useful Links
 
-- **Live API:** https://booking-beta.nbnesigns.co.uk
-- **API Docs:** https://booking-beta.nbnesigns.co.uk/api/v1/docs
-- **GitHub Repo:** https://github.com/NBNEORIGIN/nbne-booking
+- **Public Booking Form:** https://booking.nbnesigns.co.uk/
+- **Admin Dashboard:** https://booking.nbnesigns.co.uk/admin.html
+- **API Docs:** https://booking.nbnesigns.co.uk/api/v1/docs
+- **Health Check:** https://booking.nbnesigns.co.uk/health
 - **FastAPI Documentation:** https://fastapi.tiangolo.com/
 - **Caddy Documentation:** https://caddyserver.com/docs/
 
@@ -445,6 +574,13 @@ For issues or questions:
 
 ---
 
-**Last Updated:** February 2, 2026  
-**Deployment Status:** ✅ Production Ready  
-**Version:** 0.1.0-alpha
+**Last Updated:** February 3, 2026  
+**Deployment Status:** ✅ **LIVE IN PRODUCTION**  
+**Version:** 1.0.0
+
+## 🎉 Platform Ready For
+
+- ✅ Client demonstrations
+- ✅ Live customer bookings
+- ✅ Multi-tenant expansion (squash courts, etc.)
+- ✅ Additional feature development

@@ -95,6 +95,60 @@ Each decision should include:
 
 ---
 
+### [The Mind Department - Loop 1] Group Classes Layout Pattern
+**Date:** 2026-02-04  
+**Context:** The Mind Department needs a public booking page for mindfulness/wellbeing group classes. Must show upcoming sessions with capacity (sold out, few spaces, available) in a calm, mobile-first UX that matches their grounded, non-pushy brand.
+
+**Decision:** Implement **Upcoming Sessions List** (vertical timeline) as default layout pattern.
+
+**Layout Structure:**
+- Temporal grouping: "Today", "This Week", "Next Week", "Later"
+- Session cards showing: date/time, title, location, duration, capacity badge, price, CTA
+- Capacity states: "Available", "X spaces left", "Fully Booked"
+- Vertical scroll, one session per row
+- Mobile-first responsive design
+
+**Rationale:**
+1. **Mobile Excellence**: Vertical scroll is natural on phones (70%+ of wellness bookings). Large touch targets, no pinch-zoom needed.
+2. **Calm UX**: Simple linear flow with generous spacing. Low cognitive load matches mindfulness audience.
+3. **Capacity Transparency**: "3 spaces left" badge immediately visible. No hidden information.
+4. **Implementation Safety**: Low technical risk, reuses existing patterns, accessible by default.
+5. **Brand Alignment**: Calm, grounded aesthetic with generous whitespace feels premium, not cluttered.
+
+**Alternatives Considered:**
+- **Calendar Grid View**: Rejected - too complex on mobile, higher cognitive load, harder to show capacity in small cells. Score: 5.05/10
+- **Slot Picker (Day → Time)**: Rejected - wrong model for fixed group sessions, poor capacity visibility, higher friction. Score: 5.85/10
+- **List View**: Selected - best mobile UX, clearest capacity visibility, lowest cognitive load. Score: 9.15/10
+
+**Consequences:**
+- **Pros**:
+  - Excellent mobile experience (primary device for wellness clients)
+  - Clear capacity visibility reduces booking friction
+  - Simple implementation with low technical risk
+  - Accessible by default (linear navigation)
+  - Scales well for 1-10 sessions/week
+- **Cons**:
+  - Can get long with 10+ sessions (requires scrolling)
+  - No visual calendar overview
+  - Limited multi-dimensional filtering
+
+**Fallback Strategy:**
+If session volume exceeds 15/week for 3 consecutive months:
+1. Add filter by class type (Meditation, Movement, etc.)
+2. Add pagination (10 sessions per page)
+3. Consider calendar view as optional toggle (feature flag)
+
+**Success Metrics:**
+- Mobile booking completion rate > 70%
+- Average time to book < 2 minutes
+- User feedback score > 4/5 for "ease of use"
+
+**Review Date:** May 2026 (after 3 months of usage)
+
+**Status:** Accepted
+
+---
+
 ## Template for New Decisions
 
 ### [Loop X] Decision Title

@@ -91,7 +91,7 @@ class AuditLogger:
             resource_type=resource_type,
             resource_id=resource_id,
             description=description,
-            metadata=sanitized_metadata,
+            meta=sanitized_metadata,
             ip_address=ip_address,
             user_agent=user_agent,
             request_path=request_path,

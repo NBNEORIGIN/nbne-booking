@@ -58,6 +58,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/register",
         "/api/v1/auth/password-reset-request",
         "/api/v1/auth/password-reset",
+        "/api/v1/services/public",
+        "/api/v1/bookings/public",
         "/public/book",
         "/health",
     }

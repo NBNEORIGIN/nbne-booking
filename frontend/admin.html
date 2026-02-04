@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - NBNE Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div id="loginSection" class="min-h-screen flex items-center justify-center px-4">
+        <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Admin Login</h1>
+            <p class="text-gray-600 mb-6">Access your booking dashboard</p>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="loginEmail" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="loginPassword" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div id="loginError" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"></div>
+                
+                <button type="submit" 
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboardSection" class="hidden min-h-screen">
+        <nav class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">NBNE Booking Dashboard</h1>
+                    </div>
+                    <button id="logoutBtn" class="text-gray-600 hover:text-gray-900">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">All Bookings</h2>
+                    <button id="exportBtn" 
+                        class="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
+                        Export to CSV
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                        <input type="date" id="filterFromDate" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                        <input type="date" id="filterToDate" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="filterStatus" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Statuses</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="completed">Completed</option>
+                            <option value="no_show">No Show</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="loadingSpinner" class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p class="text-gray-600 mt-2">Loading bookings...</p>
+                </div>
+
+                <div id="bookingsTable" class="hidden overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsTableBody" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="noBookings" class="hidden text-center py-8 text-gray-500">
+                    No bookings found.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://booking.nbnesigns.co.uk/api/v1';
+        let authToken = localStorage.getItem('authToken');
+        let allBookings = [];
+
+        // Check if already logged in
+        if (authToken) {
+            showDashboard();
+        }
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Invalid credentials');
+                }
+
+                const data = await response.json();
+                authToken = data.access_token;
+                localStorage.setItem('authToken', authToken);
+                
+                errorDiv.classList.add('hidden');
+                showDashboard();
+            } catch (error) {
+                errorDiv.textContent = 'Invalid email or password';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('authToken');
+            authToken = null;
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+        });
+
+        // Show dashboard
+        function showDashboard() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            loadBookings();
+        }
+
+        // Load bookings
+        async function loadBookings() {
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            document.getElementById('bookingsTable').classList.add('hidden');
+            document.getElementById('noBookings').classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}/bookings/`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load bookings');
+                }
+
+                allBookings = await response.json();
+                displayBookings(allBookings);
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                document.getElementById('loadingSpinner').classList.add('hidden');
+                document.getElementById('noBookings').classList.remove('hidden');
+            }
+        }
+
+        // Display bookings
+        function displayBookings(bookings) {
+            const tbody = document.getElementById('bookingsTableBody');
+            tbody.innerHTML = '';
+
+            document.getElementById('loadingSpinner').classList.add('hidden');
+
+            if (bookings.length === 0) {
+                document.getElementById('noBookings').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('bookingsTable').classList.remove('hidden');
+
+            bookings.forEach(booking => {
+                const row = document.createElement('tr');
+                const startTime = new Date(booking.start_time);
+                const endTime = new Date(booking.end_time);
+                
+                const statusColors = {
+                    'confirmed': 'bg-green-100 text-green-800',
+                    'cancelled': 'bg-red-100 text-red-800',
+                    'completed': 'bg-blue-100 text-blue-800',
+                    'no_show': 'bg-gray-100 text-gray-800'
+                };
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#${booking.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${startTime.toLocaleDateString()}<br>
+                        <span class="text-gray-500">${startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${booking.service_name || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${booking.customer_name}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        ${booking.customer_email}<br>
+                        <span class="text-gray-500">${booking.customer_phone || 'N/A'}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[booking.status] || 'bg-gray-100 text-gray-800'}">
+                            ${booking.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${booking.notes || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Filter bookings
+        function filterBookings() {
+            const fromDate = document.getElementById('filterFromDate').value;
+            const toDate = document.getElementById('filterToDate').value;
+            const status = document.getElementById('filterStatus').value;
+
+            let filtered = allBookings.filter(booking => {
+                const bookingDate = new Date(booking.start_time).toISOString().split('T')[0];
+                
+                if (fromDate && bookingDate < fromDate) return false;
+                if (toDate && bookingDate > toDate) return false;
+                if (status && booking.status !== status) return false;
+                
+                return true;
+            });
+
+            displayBookings(filtered);
+        }
+
+        // Add filter event listeners
+        document.getElementById('filterFromDate').addEventListener('change', filterBookings);
+        document.getElementById('filterToDate').addEventListener('change', filterBookings);
+        document.getElementById('filterStatus').addEventListener('change', filterBookings);
+
+        // Export to CSV
+        document.getElementById('exportBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_URL}/bookings/export`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to export bookings');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bookings_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                alert('Failed to export bookings. Please try again.');
+                console.error('Export error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

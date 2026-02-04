@@ -1,7 +1,10 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, or_
 from datetime import datetime
+import csv
+import io
 
 from api.core.database import get_db
 from api.core.permissions import require_tenant_access, verify_resource_ownership
@@ -16,6 +19,129 @@ from api.services.slot_generator import SlotGenerator
 from api.services.email_service import email_service
 
 router = APIRouter()
+
+
+@router.get("/export")
+def export_bookings_csv(
+    tenant: Tenant = Depends(require_tenant_access),
+    db = Depends(get_db)
+):
+    """
+    Export all bookings as CSV file.
+    Requires authentication.
+    """
+    # Get all bookings for the tenant
+    bookings = db.query(Booking).filter(
+        Booking.tenant_id == tenant.id
+    ).order_by(Booking.start_time.desc()).all()
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        'Booking ID',
+        'Date',
+        'Start Time',
+        'End Time',
+        'Service',
+        'Customer Name',
+        'Customer Email',
+        'Customer Phone',
+        'Status',
+        'Notes',
+        'Created At'
+    ])
+    
+    # Write booking data
+    for booking in bookings:
+        service = db.query(Service).filter(Service.id == booking.service_id).first()
+        service_name = service.name if service else 'Unknown'
+        
+        writer.writerow([
+            booking.id,
+            booking.start_time.strftime('%Y-%m-%d'),
+            booking.start_time.strftime('%H:%M'),
+            booking.end_time.strftime('%H:%M'),
+            service_name,
+            booking.customer_name,
+            booking.customer_email,
+            booking.customer_phone or '',
+            booking.status.value,
+            booking.notes or '',
+            booking.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=bookings_{datetime.now().strftime('%Y%m%d')}.csv"
+        }
+    )
+
+
+@router.post("/public", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
+def create_public_booking(
+    booking_in: BookingCreate,
+    db = Depends(get_db)
+):
+    """
+    Create a new booking from public booking form (no authentication required).
+    Automatically assigns to tenant ID 1 (NBNE Signs).
+    """
+    tenant_id = 1  # Default to NBNE Signs tenant
+    
+    # Verify service exists and is active
+    service = db.query(Service).filter(
+        Service.id == booking_in.service_id,
+        Service.tenant_id == tenant_id,
+        Service.is_active == True
+    ).first()
+    
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service not found"
+        )
+    
+    # Validate booking times
+    if booking_in.end_time <= booking_in.start_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="end_time must be after start_time"
+        )
+    
+    # Create booking with PENDING status
+    booking = Booking(
+        **booking_in.model_dump(),
+        tenant_id=tenant_id,
+        status=BookingStatus.PENDING
+    )
+    
+    db.add(booking)
+    db.commit()
+    db.refresh(booking)
+    
+    # Return booking with service name
+    return {
+        "id": booking.id,
+        "tenant_id": booking.tenant_id,
+        "service_id": booking.service_id,
+        "service_name": service.name,
+        "start_time": booking.start_time,
+        "end_time": booking.end_time,
+        "customer_name": booking.customer_name,
+        "customer_email": booking.customer_email,
+        "customer_phone": booking.customer_phone,
+        "status": booking.status,
+        "notes": booking.notes,
+        "created_at": booking.created_at,
+        "updated_at": booking.updated_at
+    }
 
 
 @router.get("/", response_model=List[BookingListItem])
@@ -243,7 +369,7 @@ def create_booking(
 def update_booking(
     booking_id: int,
     booking_in: BookingUpdate,
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
     db = Depends(get_db)
 ):
     """Update a booking (must belong to current tenant)."""
@@ -287,7 +413,7 @@ def update_booking(
 @router.delete("/{booking_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel_booking(
     booking_id: int,
-    tenant: Tenant = Depends(require_tenant),
+    tenant: Tenant = Depends(require_tenant_access),
     db = Depends(get_db)
 ):
     """Cancel a booking (sets status to CANCELLED, must belong to current tenant)."""

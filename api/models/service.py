@@ -13,6 +13,7 @@ class Service(Base):
     description = Column(String(1000), nullable=True)
     duration_minutes = Column(Integer, nullable=False)
     price = Column(Float, nullable=True)
+    max_capacity = Column(Integer, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
