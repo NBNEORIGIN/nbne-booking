@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBNE Signs - Book a Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <h1 class="text-3xl font-bold text-gray-900">NBNE Signs</h1>
+                <p class="text-gray-600 mt-1">Professional Signage Services</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <!-- Loading State -->
+            <div id="loading" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p class="mt-4 text-gray-600">Loading services...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-6">
+                <h3 class="text-red-800 font-semibold mb-2">Error Loading Services</h3>
+                <p class="text-red-600" id="error-message"></p>
+            </div>
+
+            <!-- Booking Form -->
+            <div id="booking-form" class="hidden">
+                <div class="bg-white rounded-lg shadow-md p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Book a Service</h2>
+                    
+                    <form id="service-form" class="space-y-6">
+                        <!-- Service Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Select Service
+                            </label>
+                            <div id="services-list" class="grid gap-4 md:grid-cols-2">
+                                <!-- Services will be loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- Customer Details -->
+                        <div class="grid gap-6 md:grid-cols-2">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Full Name *
+                                </label>
+                                <input type="text" id="name" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Email *
+                                </label>
+                                <input type="email" id="email" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                                Phone Number *
+                            </label>
+                            <input type="tel" id="phone" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+
+                        <!-- Date & Time -->
+                        <div class="grid gap-6 md:grid-cols-2">
+                            <div>
+                                <label for="date" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Preferred Date *
+                                </label>
+                                <input type="date" id="date" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label for="time" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Preferred Time *
+                                </label>
+                                <select id="time" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select time...</option>
+                                    <option value="09:00">9:00 AM</option>
+                                    <option value="10:00">10:00 AM</option>
+                                    <option value="11:00">11:00 AM</option>
+                                    <option value="12:00">12:00 PM</option>
+                                    <option value="13:00">1:00 PM</option>
+                                    <option value="14:00">2:00 PM</option>
+                                    <option value="15:00">3:00 PM</option>
+                                    <option value="16:00">4:00 PM</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                                Additional Notes
+                            </label>
+                            <textarea id="notes" rows="4"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Any specific requirements or questions..."></textarea>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="submit-btn"
+                            class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                            Request Booking
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Success Message -->
+                <div id="success" class="hidden mt-6 bg-green-50 border border-green-200 rounded-lg p-6">
+                    <h3 class="text-green-800 font-semibold mb-2">✓ Booking Request Submitted!</h3>
+                    <p class="text-green-600">We'll contact you shortly to confirm your appointment.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'https://booking.nbnesigns.co.uk/api/v1';
+        let selectedService = null;
+
+        // Set minimum date to today
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('date');
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.min = today;
+            
+            loadServices();
+        });
+
+        async function loadServices() {
+            try {
+                const response = await fetch(`${API_URL}/services`);
+                if (!response.ok) throw new Error('Failed to load services');
+                
+                const services = await response.json();
+                displayServices(services);
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('booking-form').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading services:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+
+        function displayServices(services) {
+            const container = document.getElementById('services-list');
+            container.innerHTML = services.map(service => `
+                <div class="service-card border-2 rounded-lg p-4 cursor-pointer transition-all hover:border-blue-500"
+                     data-service-id="${service.id}"
+                     onclick="selectService(${service.id}, '${service.name}', ${service.price}, ${service.duration_minutes})">
+                    <h3 class="font-semibold text-lg text-gray-900">${service.name}</h3>
+                    <p class="text-gray-600 text-sm mt-1">${service.description}</p>
+                    <div class="mt-3 flex justify-between items-center">
+                        <span class="text-blue-600 font-semibold">£${service.price.toFixed(2)}</span>
+                        <span class="text-gray-500 text-sm">${service.duration_minutes} min</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectService(id, name, price, duration) {
+            selectedService = { id, name, price, duration };
+            
+            // Update UI
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.classList.remove('border-blue-500', 'bg-blue-50');
+            });
+            event.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+        }
+
+        document.getElementById('service-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedService) {
+                alert('Please select a service');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            // Calculate start_time and end_time
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const startTime = new Date(`${date}T${time}:00`);
+            const endTime = new Date(startTime.getTime() + selectedService.duration * 60000);
+
+            const formData = {
+                service_id: selectedService.id,
+                start_time: startTime.toISOString(),
+                end_time: endTime.toISOString(),
+                customer_name: document.getElementById('name').value,
+                customer_email: document.getElementById('email').value,
+                customer_phone: document.getElementById('phone').value,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/bookings/public`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to submit booking');
+                }
+
+                // Show success message
+                document.getElementById('service-form').classList.add('hidden');
+                document.getElementById('success').classList.remove('hidden');
+                
+                // Reset form after 3 seconds
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Request Booking';
+            }
+        });
+    </script>
+</body>
+</html>
