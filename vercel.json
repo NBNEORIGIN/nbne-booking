@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/classes.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
