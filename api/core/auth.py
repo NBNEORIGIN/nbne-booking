@@ -108,6 +108,10 @@ def get_current_user_optional(
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Get current user if authenticated, None otherwise (for optional auth)."""
+    skip_dependency = getattr(SkipDependencyOverride, "skip_dependencies", False)
+    if skip_dependency:
+        return None
+    
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return None

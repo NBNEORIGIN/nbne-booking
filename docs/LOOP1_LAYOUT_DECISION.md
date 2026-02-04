@@ -5,6 +5,55 @@
 **Decision Type:** UI/UX Pattern Selection  
 **Status:** APPROVED ✅
 
+> **2026-02-04 Reassessment:** Client direction and MASTER_WIGGUM_PROMPT require a calendar/grid experience for group classes. This document now records the refreshed Loop 1 decision to implement a **calendar grid (compact week view)** as the default layout, superseding the earlier sessions-list recommendation. The original analysis remains below for traceability.
+
+---
+
+## Reassessment Summary (Calendar Grid Layout)
+
+### Why the Decision Changed
+- **Client expectation:** The Mind Department explicitly asked for a grid/calendar to view classes “week at a glance”.
+- **WIGGUM mandate:** MASTER_WIGGUM_PROMPT prioritises calendar/grid visibility for group sessions to reduce ambiguity.
+- **Multi-tenant parity:** A week-grid primitive supports House of Hair slot picker work later while keeping shared components.
+- **Commercial fit:** Calendar overview differentiates NBNE platform from simple list-based competitors.
+
+### Selected Pattern — Compact 7-Day Grid
+- **Layout:** Horizontal row of the next 7 calendar days (rolling window), each column listing sessions with availability badges.
+- **Interaction:** Tap/click column expands modal (detail + CTA) — no page reloads.
+- **Availability states:** Colour-coded badges (available, few left, sold out, closed, past) surfaced inside each cell.
+- **Responsive treatment:** On mobile the grid becomes horizontal scroll cards with sticky weekday headers.
+- **Accessibility:** Grid uses `<table>` semantics with ARIA roles; keyboard navigation jumps day-to-day, session-to-session.
+
+### Key Advantages vs Original List
+1. **At-a-glance planning:** Users can see distribution across the week without scanning a long list.
+2. **Capacity signalling:** Badge legend in header plus per-session chips reduce ambiguity.
+3. **Pathless ready:** URLs remain `/classes` with query params (`?view=week&start=<date>`), no subpaths.
+4. **Scalable:** Multi-column layout handles increased volume (12+ sessions) without infinite scroll fatigue.
+5. **Tenant branding:** Column headers inherit CSS variables, enabling distinctive palettes per tenant configuration.
+
+### Implementation Signals for Loop 2
+- Build grid component fed by `/sessions/public/grouped` with new grouping transforms.
+- Introduce availability legend + toggle to switch between week grid and list (feature flag for future).
+- Ensure empty/holiday days show “No sessions” state without collapsing column height.
+- Add responsive breakpoints: desktop (7 columns), tablet (4 columns), mobile (horizontal scroll timeline).
+
+### Risks & Mitigations
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Grid overwhelms mobile users | Medium | Medium | Implement horizontal scroll with snap points, provide “View as list” fallback in feature flag |
+| Capacity badge clutter | Low | Medium | Use concise badges + legend, hide zero states |
+| Keyboard navigation complexity | Medium | High | Define roving tabindex, add skip links, test with NVDA/VoiceOver |
+| Implementation effort | Medium | Medium | Break work into reusable components (calendar grid, session card partials) |
+
+### Documentation Actions
+- Update `/docs/decisions.md` with calendar-grid ADR.
+- Note layout toggle strategy in `/docs/LOOP2_IMPLEMENTATION.md` after development.
+- Reflect change in WIGGUM loop log (done in Loop 1 review step).
+
+---
+
+> Original 2026-02-02 analysis retained below (archived for reference).
+
 ---
 
 ## Decision Context
@@ -330,39 +379,41 @@ const getCapacityBadge = (spacesLeft, maxCapacity) => {
 
 ## Decision Log
 
-**Decision:** Implement Option A (Upcoming Sessions List) as default layout
+**Decision:** Implement compact 7-day calendar grid (week-at-a-glance) as default layout, retaining list view as optional fallback for future A/B testing.
 
 **Decided by:** Development team  
 **Date:** 2026-02-04  
 **Approved by:** Product owner  
 
-**Alternatives considered:** Calendar grid, slot picker  
-**Reason for rejection:** Higher complexity, less mobile-friendly, doesn't match calm UX requirements
+**Alternatives considered:** Session list (archived), slot picker  
+**Reason for selection:** Aligns with client/WIGGUM requirements for calendar visibility; supports multi-tenant parity and commercial differentiation.  
+**Risks:** Increased implementation effort, responsive complexity (addressed in mitigation plan above).
 
 **Review date:** After 3 months of usage (May 2026)  
 **Success metrics:**
-- Mobile booking completion rate > 70%
-- Average time to book < 2 minutes
-- User feedback score > 4/5 for "ease of use"
+- Calendar comprehension score in client testing ≥ 4/5
+- Mobile booking completion rate > 65%
+- Average time to identify suitable slot < 90 seconds
+- Support requests about “finding sessions” reduced vs baseline
 
 ---
 
 ## Next Steps (Loop 2)
 
-1. Implement session list page with temporal grouping
-2. Build session card component with capacity states
-3. Add empty state handling
-4. Test on mobile devices
-5. Validate accessibility
+1. Implement `/classes` week-grid layout consuming grouped sessions endpoint.
+2. Build responsive column/grid system with horizontal scroll on mobile.
+3. Surface availability legend + badge styles per state.
+4. Provide polished empty day states and loading skeletons.
+5. Validate keyboard navigation, focus management, and screen-reader labels.
 
 **Exit criteria for Loop 2:**
-- ✅ /classes page renders session list
-- ✅ Capacity states display correctly
-- ✅ Mobile responsive
-- ✅ Keyboard navigable
-- ✅ Empty state shows gracefully
+- ✅ Week-grid renders sessions with availability states
+- ✅ Responsive behaviour across desktop/tablet/mobile
+- ✅ Keyboard + screen reader support verified
+- ✅ Empty/past days handled gracefully
+- ✅ Feature documented in `/docs/LOOP2_IMPLEMENTATION.md`
 
 ---
 
 **Status:** APPROVED ✅  
-**Confidence:** HIGH - Decision is well-supported by data and aligns with client needs
+**Confidence:** HIGH – Calendar grid meets stakeholder requirements and provides clear UX win while maintaining WIGGUM standards

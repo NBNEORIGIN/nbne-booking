@@ -58,6 +58,37 @@ Must be met before adding link to nbnesigns.co.uk:
 - Using Alembic for migrations
 - Server-rendered templates for admin UI (not separate React app)
 - Render for deployment platform
+- Local dev runs with one command (docker-compose up)
+- infra/.env.example created
+- Setup documentation created (docs/SETUP.md)
+- .gitignore configured
+- README.md with quick start
+
+---
+
+### [2026-02-04] Loop 0 Refresh — Local Dev Parity
+**Goal:** Restore Loop 0 guarantees after workspace rebuild. Provide portable Docker Compose stack, tenant seeds, and documentation aligned with WIGGUM pathless rules.
+
+#### Acceptance Criteria
+- [x] Local Docker Compose stack runs API, Postgres, Mailhog, and frontend at root with one command
+- [x] Start scripts updated to target `docker-compose.local.yml`
+- [x] Mind Department and House of Hair tenants seeded via script
+- [x] `/docs/LOCAL_DEV.md` created with one-command workflow
+- [x] Pathless verification (no `/booking/` dependencies in runtime code)
+
+#### Implementation Notes
+- Added `docker-compose.local.yml` with bind mounts for live reload and Mailhog integration
+- Updated `scripts/start.sh`, `scripts/start.ps1`, and `start-dev.bat` to call new compose stack and surface service URLs
+- Replaced generic seed data with pilot tenants (`mind-department`, `house-of-hair`) including branding and behaviour config
+- Authored `/docs/LOCAL_DEV.md` covering prerequisites, startup, seeding, tests, and troubleshooting
+- Validated compose structure via `docker compose -f docker-compose.local.yml config`
+
+#### Tests & Verification
+- `docker compose -f docker-compose.local.yml config` (structure validation)
+- Manual runtime verification still required (Docker not executed in this session)
+
+#### Status
+**PASS** (pending manual startup & seed confirmation)
 
 ---
 
@@ -110,6 +141,13 @@ docker-compose exec api pytest tests/test_tenants.py -v
 - JSON column for tenant settings to allow flexible per-tenant configuration
 - Unique constraints on both slug and subdomain
 - Middleware approach for tenant context (available throughout request lifecycle)
+
+#### [2026-02-04] Loop 1 Refresh — Calendar Grid Mandate
+- **Context:** MASTER_WIGGUM_PROMPT updated requirements; Mind Department brief emphasised week-at-a-glance view.
+- **Decision:** Adopt compact 7-day calendar grid as default `/classes` layout, retaining list view as optional fallback.
+- **Rationale:** Aligns with client expectation, supports multi-tenant parity, differentiates product commercially.
+- **Actions:** Updated `docs/LOOP1_LAYOUT_DECISION.md` with new ADR; Loop 2 scope adjusted to implement grid UI.
+- **Status:** PASS (documentation complete, implementation scheduled for Loop 2).
 
 ---
 

@@ -65,6 +65,10 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     }
     
     async def dispatch(self, request: Request, call_next):
+        # Skip CSRF check for app state disable flag
+        if getattr(request.app.state, "disable_csrf", False):
+            return await call_next(request)
+
         # Skip CSRF check for safe methods
         if request.method in self.SAFE_METHODS:
             return await call_next(request)

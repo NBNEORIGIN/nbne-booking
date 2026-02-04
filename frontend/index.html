@@ -161,7 +161,11 @@
     </div>
 
     <script>
-        const API_URL = 'https://booking.nbnesigns.co.uk/api/v1';
+        // Auto-detect environment and set API URL
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8000/api/v1'
+            : 'https://booking.nbnesigns.co.uk/api/v1';
+        
         let currentBranding = null;
         let selectedSession = null;
 

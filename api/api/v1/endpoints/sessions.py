@@ -44,8 +44,8 @@ class SessionGroupResponse(BaseModel):
 
 @router.get("/public", response_model=List[SessionResponse])
 async def get_public_sessions(
-    tenant: Tenant = Depends(get_current_tenant),
     db: Session = Depends(get_db),
+    tenant: Optional[Tenant] = Depends(get_current_tenant),
     from_date: Optional[date] = Query(None, description="Start date for sessions (default: today)"),
     to_date: Optional[date] = Query(None, description="End date for sessions (default: 30 days from now)"),
     service_id: Optional[int] = Query(None, description="Filter by specific service")
@@ -53,7 +53,14 @@ async def get_public_sessions(
     """
     Get upcoming sessions for a tenant with capacity information.
     Sessions are generated from services with availability windows.
+    Falls back to first active tenant if none specified.
     """
+    # If no tenant resolved, use the first active tenant
+    if not tenant:
+        tenant = db.query(Tenant).filter(Tenant.is_active == True).first()
+        if not tenant:
+            raise HTTPException(status_code=404, detail="No active tenant found")
+    
     if from_date is None:
         from_date = date.today()
     if to_date is None:
@@ -152,15 +159,22 @@ async def get_public_sessions(
 
 @router.get("/public/grouped", response_model=List[SessionGroupResponse])
 async def get_grouped_sessions(
-    tenant: Tenant = Depends(get_current_tenant),
     db: Session = Depends(get_db),
+    tenant: Optional[Tenant] = Depends(get_current_tenant),
     from_date: Optional[date] = Query(None, description="Start date for sessions (default: today)"),
     to_date: Optional[date] = Query(None, description="End date for sessions (default: 30 days from now)")
 ):
     """
     Get sessions grouped by time period (Today, This Week, Next Week, Later).
+    Falls back to first active tenant if none specified.
     """
-    sessions = await get_public_sessions(tenant=tenant, db=db, from_date=from_date, to_date=to_date)
+    # If no tenant resolved, use the first active tenant
+    if not tenant:
+        tenant = db.query(Tenant).filter(Tenant.is_active == True).first()
+        if not tenant:
+            raise HTTPException(status_code=404, detail="No active tenant found")
+    
+    sessions = await get_public_sessions(tenant=tenant, db=db, from_date=from_date, to_date=to_date, service_id=None)
     
     today = date.today()
     week_start = today - timedelta(days=today.weekday())

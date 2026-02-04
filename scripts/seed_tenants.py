@@ -23,57 +23,68 @@ def seed_tenants():
         
         tenants_data = [
             {
-                "slug": "acme-corp",
-                "name": "Acme Corporation",
-                "subdomain": "acme",
-                "email": "bookings@acme-corp.example.com",
-                "phone": "+1-555-0100",
+                "slug": "mind-department",
+                "name": "The Mind Department",
+                "subdomain": "mind",
+                "email": "hello@theminddepartment.com",
+                "phone": "+44-191-555-0100",
                 "is_active": True,
                 "settings": {
-                    "timezone": "America/New_York",
-                    "business_hours": {
-                        "monday": {"start": "09:00", "end": "17:00"},
-                        "tuesday": {"start": "09:00", "end": "17:00"},
-                        "wednesday": {"start": "09:00", "end": "17:00"},
-                        "thursday": {"start": "09:00", "end": "17:00"},
-                        "friday": {"start": "09:00", "end": "17:00"}
+                    "timezone": "Europe/London",
+                    "intake_form_required": True,
+                    "booking_layout": "calendar",
+                    "capacity_thresholds": {
+                        "low": 3,
+                        "sold_out": 0
                     }
+                },
+                "client_display_name": "The Mind Department",
+                "logo_url": None,
+                "primary_color": "#8D9889",
+                "secondary_color": "#EEE8E5",
+                "accent_color": "#27382E",
+                "booking_page_title": "Mind Department Classes",
+                "booking_page_intro": "Weekly mindfulness and workplace wellbeing sessions.",
+                "location_text": "The Core, Newcastle",
+                "contact_email": "hello@theminddepartment.com",
+                "contact_phone": "+44-191-555-0100",
+                "business_address": "The Core, Bath Lane, Newcastle upon Tyne",
+                "social_links": {
+                    "website": "https://www.theminddepartment.com"
                 }
             },
             {
-                "slug": "beauty-salon",
-                "name": "Beauty & Wellness Salon",
-                "subdomain": "beauty",
-                "email": "appointments@beautysalon.example.com",
-                "phone": "+1-555-0200",
+                "slug": "house-of-hair",
+                "name": "House of Hair",
+                "subdomain": "hair",
+                "email": "bookings@houseofhair.example.com",
+                "phone": "+44-191-555-0200",
                 "is_active": True,
                 "settings": {
-                    "timezone": "America/Los_Angeles",
-                    "business_hours": {
-                        "tuesday": {"start": "10:00", "end": "19:00"},
-                        "wednesday": {"start": "10:00", "end": "19:00"},
-                        "thursday": {"start": "10:00", "end": "19:00"},
-                        "friday": {"start": "10:00", "end": "19:00"},
-                        "saturday": {"start": "09:00", "end": "17:00"}
+                    "timezone": "Europe/London",
+                    "booking_layout": "slot-picker",
+                    "staff": [
+                        {"id": "sarah", "name": "Sarah Ellis"},
+                        {"id": "jade", "name": "Jade Turner"}
+                    ],
+                    "services": {
+                        "cut-and-finish": {"duration_minutes": 60},
+                        "colour-refresh": {"duration_minutes": 90}
                     }
-                }
-            },
-            {
-                "slug": "tech-consulting",
-                "name": "Tech Consulting Group",
-                "subdomain": "techconsult",
-                "email": "meetings@techconsulting.example.com",
-                "phone": "+1-555-0300",
-                "is_active": True,
-                "settings": {
-                    "timezone": "America/Chicago",
-                    "business_hours": {
-                        "monday": {"start": "08:00", "end": "18:00"},
-                        "tuesday": {"start": "08:00", "end": "18:00"},
-                        "wednesday": {"start": "08:00", "end": "18:00"},
-                        "thursday": {"start": "08:00", "end": "18:00"},
-                        "friday": {"start": "08:00", "end": "16:00"}
-                    }
+                },
+                "client_display_name": "House of Hair",
+                "logo_url": None,
+                "primary_color": "#2F2A2D",
+                "secondary_color": "#F7EFEA",
+                "accent_color": "#D99B66",
+                "booking_page_title": "Book with House of Hair",
+                "booking_page_intro": "Choose your stylist and service to reserve your slot.",
+                "location_text": "NBNE Studio, Gateshead",
+                "contact_email": "bookings@houseofhair.example.com",
+                "contact_phone": "+44-191-555-0200",
+                "business_address": "72 High Street, Gateshead, NE8 1EE",
+                "social_links": {
+                    "instagram": "https://instagram.com/houseofhair"
                 }
             }
         ]

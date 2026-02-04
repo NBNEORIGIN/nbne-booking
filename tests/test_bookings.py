@@ -574,3 +574,162 @@ def test_tenant_isolation_bookings(client, test_tenant, test_tenant_2, db):
     data = response.json()
     assert len(data) == 1
     assert data[0]["customer_name"] == "Tenant 1 Customer"
+
+
+def _next_weekday(weekday: int) -> date:
+    today = date.today()
+    days_ahead = weekday - today.weekday()
+    if days_ahead <= 0:
+        days_ahead += 7
+    return today + timedelta(days=days_ahead)
+
+
+def test_create_public_booking_success(client, test_tenant, db):
+    """Public booking endpoint should create confirmed booking for available slot."""
+    from api.models.service import Service
+    from api.models.availability import Availability
+    from api.models.booking import Booking, BookingStatus
+
+    service = Service(
+        tenant_id=test_tenant.id,
+        name="Calming Breathwork",
+        duration_minutes=60,
+        max_capacity=5,
+        is_active=True
+    )
+    db.add(service)
+
+    availability = Availability(
+        tenant_id=test_tenant.id,
+        day_of_week=0,  # Monday
+        start_time=time(9, 0),
+        end_time=time(17, 0)
+    )
+    db.add(availability)
+    db.commit()
+    db.refresh(service)
+
+    next_monday = _next_weekday(0)
+    start = datetime.combine(next_monday, time(11, 0))
+    end = datetime.combine(next_monday, time(12, 0))
+
+    response = client.post(
+        "/api/v1/bookings/public",
+        json={
+            "service_id": service.id,
+            "start_time": start.isoformat(),
+            "end_time": end.isoformat(),
+            "customer_name": "Breathwork Student",
+            "customer_email": "student@example.com",
+            "customer_phone": "+1-555-9876",
+            "notes": "Looking forward to it"
+        },
+        headers={"X-Tenant-Slug": test_tenant.slug}
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    assert data["status"] == BookingStatus.CONFIRMED.value
+    assert data["tenant_id"] == test_tenant.id
+    assert data["service_id"] == service.id
+
+
+def test_public_booking_respects_capacity(client, test_tenant, db):
+    """Public booking should reject when capacity is exhausted."""
+    from api.models.service import Service
+    from api.models.availability import Availability
+    from api.models.booking import Booking, BookingStatus
+
+    service = Service(
+        tenant_id=test_tenant.id,
+        name="Restorative Yoga",
+        duration_minutes=60,
+        max_capacity=1,
+        is_active=True
+    )
+    db.add(service)
+
+    availability = Availability(
+        tenant_id=test_tenant.id,
+        day_of_week=0,
+        start_time=time(9, 0),
+        end_time=time(17, 0)
+    )
+    db.add(availability)
+    db.commit()
+    db.refresh(service)
+
+    next_monday = _next_weekday(0)
+    start = datetime.combine(next_monday, time(10, 0))
+    end = datetime.combine(next_monday, time(11, 0))
+
+    # Seed existing confirmed booking to fill capacity
+    existing_booking = Booking(
+        tenant_id=test_tenant.id,
+        service_id=service.id,
+        start_time=start,
+        end_time=end,
+        customer_name="Existing Guest",
+        customer_email="guest@example.com",
+        status=BookingStatus.CONFIRMED
+    )
+    db.add(existing_booking)
+    db.commit()
+
+    response = client.post(
+        "/api/v1/bookings/public",
+        json={
+            "service_id": service.id,
+            "start_time": start.isoformat(),
+            "end_time": end.isoformat(),
+            "customer_name": "Second Guest",
+            "customer_email": "second@example.com"
+        },
+        headers={"X-Tenant-Slug": test_tenant.slug}
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "fully booked" in response.json()["detail"].lower()
+
+
+def test_public_booking_rejects_past_session(client, test_tenant, db):
+    """Public booking should reject past sessions."""
+    from api.models.service import Service
+    from api.models.availability import Availability
+
+    service = Service(
+        tenant_id=test_tenant.id,
+        name="Sound Bath",
+        duration_minutes=45,
+        max_capacity=10,
+        is_active=True
+    )
+    db.add(service)
+
+    availability = Availability(
+        tenant_id=test_tenant.id,
+        day_of_week=date.today().weekday(),
+        start_time=time(0, 0),
+        end_time=time(23, 59)
+    )
+    db.add(availability)
+    db.commit()
+    db.refresh(service)
+
+    start = datetime.utcnow() - timedelta(hours=2)
+    end = start + timedelta(minutes=service.duration_minutes)
+
+    response = client.post(
+        "/api/v1/bookings/public",
+        json={
+            "service_id": service.id,
+            "start_time": start.isoformat(),
+            "end_time": end.isoformat(),
+            "customer_name": "Late Guest",
+            "customer_email": "late@example.com"
+        },
+        headers={"X-Tenant-Slug": test_tenant.slug}
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "no longer available" in response.json()["detail"].lower()

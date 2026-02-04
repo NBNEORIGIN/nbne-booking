@@ -1,8 +1,16 @@
 #!/bin/bash
 # Quick start script for NBNE Booking
 
-echo "Starting NBNE Booking..."
+echo "Starting NBNE Booking (local stack)..."
 echo ""
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE_FILE="${ROOT_DIR}/docker-compose.local.yml"
+
+if [ ! -f "${COMPOSE_FILE}" ]; then
+    echo "Error: ${COMPOSE_FILE} not found. Ensure you are in the project root."
+    exit 1
+fi
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
@@ -14,8 +22,8 @@ echo "✓ Docker is running"
 echo ""
 
 # Start containers
-echo "Starting containers..."
-docker-compose up -d
+echo "Starting containers using docker-compose.local.yml..."
+docker compose -f "${COMPOSE_FILE}" up -d
 
 echo ""
 echo "Waiting for services to be ready..."
@@ -29,15 +37,16 @@ for i in {1..30}; do
         echo "✓ API is healthy!"
         echo ""
         echo "Services running:"
-        echo "  - API: http://localhost:8000"
+        echo "  - Frontend: http://localhost:3000"
+        echo "  - API:      http://localhost:8000"
         echo "  - API Docs: http://localhost:8000/docs"
-        echo "  - Health: http://localhost:8000/health"
+        echo "  - Mailhog:  http://localhost:8025"
         echo ""
-        echo "View logs: docker-compose logs -f"
+        echo "View logs: docker compose -f ${COMPOSE_FILE} logs -f"
         exit 0
     fi
     sleep 2
 done
 
-echo "✗ API health check timed out. Check logs with: docker-compose logs"
+echo "✗ API health check timed out. Check logs with: docker compose -f ${COMPOSE_FILE} logs"
 exit 1

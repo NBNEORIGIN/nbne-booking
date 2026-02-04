@@ -13,7 +13,8 @@ class TenantMiddleware(BaseHTTPMiddleware):
     """
     
     async def dispatch(self, request: Request, call_next):
-        db = SessionLocal()
+        session_factory = getattr(request.app.state, "session_factory", SessionLocal)
+        db = session_factory()
         try:
             # Resolve tenant from request
             tenant = resolve_tenant_from_request(request, db)

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, or_
@@ -17,6 +17,7 @@ from api.models.user import User
 from api.schemas.booking import BookingCreate, BookingResponse, BookingUpdate, BookingListItem
 from api.services.slot_generator import SlotGenerator
 from api.services.email_service import email_service
+from api.core.tenant_context import get_current_tenant
 
 router = APIRouter()
 
@@ -87,15 +88,38 @@ def export_bookings_csv(
 @router.post("/public", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
 def create_public_booking(
     booking_in: BookingCreate,
-    db = Depends(get_db)
+    db = Depends(get_db),
+    tenant: Optional[Tenant] = Depends(get_current_tenant)
 ):
     """
-    Create a new booking from public booking form (no authentication required).
-    Automatically assigns to tenant ID 1 (NBNE Signs).
+    Create a new booking from the public booking form (no authentication required).
+    Respects the resolved tenant context and enforces availability/capacity rules.
     """
-    tenant_id = 1  # Default to NBNE Signs tenant
+    # Resolve tenant context (fallback to first active tenant for legacy/local access)
+    if not tenant:
+        tenant = db.query(Tenant).filter(Tenant.is_active == True).order_by(Tenant.id.asc()).first()
+        if not tenant:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No active tenant available for booking"
+            )
+    tenant_id = tenant.id
     
-    # Verify service exists and is active
+    # Prevent bookings in the past
+    if booking_in.start_time <= datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This session is no longer available to book"
+        )
+    
+    # Validate booking times
+    if booking_in.end_time <= booking_in.start_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End time must be after start time"
+        )
+    
+    # Verify service exists for tenant and is active
     service = db.query(Service).filter(
         Service.id == booking_in.service_id,
         Service.tenant_id == tenant_id,
@@ -105,28 +129,42 @@ def create_public_booking(
     if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Service not found"
+            detail="Service not found for this tenant"
         )
     
-    # Validate booking times
-    if booking_in.end_time <= booking_in.start_time:
+    # Verify slot availability against configured windows/blackouts
+    slot_generator = SlotGenerator(db, tenant_id)
+    if not slot_generator.is_slot_available(service.id, booking_in.start_time, booking_in.end_time):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="end_time must be after start_time"
+            detail="Selected time is not available for booking"
         )
     
-    # Create booking with PENDING status
+    # Enforce capacity limits when defined
+    if service.max_capacity is not None:
+        active_bookings = db.query(Booking).filter(
+            Booking.tenant_id == tenant_id,
+            Booking.service_id == service.id,
+            Booking.start_time == booking_in.start_time,
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING])
+        ).count()
+        if active_bookings >= service.max_capacity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This session is fully booked"
+            )
+    
+    # Create booking with immediate confirmation
     booking = Booking(
         **booking_in.model_dump(),
         tenant_id=tenant_id,
-        status=BookingStatus.PENDING
+        status=BookingStatus.CONFIRMED
     )
     
     db.add(booking)
     db.commit()
     db.refresh(booking)
     
-    # Return booking with service name
     return {
         "id": booking.id,
         "tenant_id": booking.tenant_id,
